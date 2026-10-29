@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>東京7天6夜親子遊 - 視覺化行程地圖與路線編輯器</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <style>
+    #map { height: 100%; width: 100%; min-height: 420px; z-index: 10; }
+    .custom-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      border-radius: 9999px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      border: 2px solid white;
+    }
+    .leaflet-popup-content-wrapper { border-radius: 12px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white shadow-md z-20 px-4 py-3 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🗼</span>
+      <div>
+        <h1 class="text-lg font-bold leading-tight">東京 7 天 6 夜 親子自由行地圖</h1>
+        <p class="text-xs text-indigo-100 hidden sm:block">視覺化每日路線 • 即時編輯地點 • 一鍵匯出 Google 地圖</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Sync Status Indicator -->
+      <div id="syncBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-700/70 border border-indigo-400/30 text-indigo-100">
+        <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="syncText">行程自動儲存</span>
+      </div>
+      <button id="addSpotBtn" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 shadow transition">
+        <span>➕</span> 新增景點
+      </button>
+      <button id="exportCsvBtn" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 border border-indigo-400 transition" title="匯出相容 Google My Maps 的 CSV">
+        <span>📥</span> 匯出 Google 地圖檔
+      </button>
+      <button id="resetBtn" class="bg-indigo-800 hover:bg-indigo-900 text-indigo-200 px-2 py-1.5 rounded-lg text-xs transition" title="重置為初始預設行程">
+        重置
+      </button>
+    </div>
+  </header>
+
+  <!-- Top Navigation: View Switcher & Day Filter Pills -->
+  <nav class="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 flex-shrink-0">
+    <!-- View Mode Switcher (Desktop & Mobile) -->
+    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 flex-shrink-0">
+      <button id="viewModeSplitBtn" class="px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
+        <span>🗺️</span> 地圖與卡片
+      </button>
+      <button id="viewModeTableBtn" class="px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+        <span>📊</span> 每日總覽表格
+      </button>
+    </div>
+
+    <!-- Day Filter Pills -->
+    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 flex-1 min-w-0">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap ml-1">篩選：</span>
+      <div id="dayFilters" class="flex gap-1.5">
+        <!-- Generated via JS -->
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Sub-Switcher (Only visible on small screens when in Split/Map mode) -->
+  <div id="mobileSubTabs" class="sm:hidden flex bg-slate-200 p-1 border-b border-slate-300 z-20 flex-shrink-0">
+    <button id="tabList" class="flex-1 py-1.5 text-xs font-semibold text-center rounded bg-white text-indigo-600 shadow">📋 行程卡片列表</button>
+    <button id="tabMap" class="flex-1 py-1.5 text-xs font-semibold text-center rounded text-slate-600">🗺️ 互動路線地圖</button>
+  </div>
+
+  <!-- Main Container -->
+  <main class="flex-1 flex overflow-hidden relative">
+    
+    <!-- Sidebar / Itinerary List -->
+    <aside id="sidebarPanel" class="w-full sm:w-96 md:w-[430px] bg-white border-r border-slate-200 flex flex-col z-10 overflow-hidden flex-shrink-0">
+      <div class="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
+        <span id="spotCountLabel" class="font-semibold text-slate-700">顯示 0 個地點</span>
+        <span class="text-indigo-600 font-medium">💡 點擊卡片可定位地圖</span>
+      </div>
+      <div id="itineraryList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <!-- Rendered by JS -->
+      </div>
+    </aside>
+
+    <!-- Map View -->
+    <section id="mapPanel" class="flex-1 h-full relative hidden sm:block">
+      <div id="map"></div>
+      <!-- Mobile Floating Back to List Button -->
+      <button id="mobileBackToListBtn" class="sm:hidden absolute top-3 left-14 z-[1000] bg-white text-indigo-700 font-bold px-3 py-1.5 rounded-full shadow-lg border border-indigo-200 text-xs flex items-center gap-1">
+        ⬅️ 返回卡片列表
+      </button>
+      <!-- Map Legend / Helper -->
+      <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur shadow-lg border border-slate-200 rounded-xl p-3 z-[1000] text-xs space-y-1.5 hidden md:block">
+        <div class="font-bold text-slate-800 flex items-center gap-1">🗺️ 路線圖例與操作提示</div>
+        <div class="text-slate-600">• <b>彩色粗實線</b>：代表當日順遊路線順序</div>
+        <div class="text-slate-600">• <b>點擊地圖任意處</b>：可直接在該處新增景點</div>
+        <div class="text-slate-600">• <b>點擊左側卡片</b>：地圖自動飛往該點並顯示詳情</div>
+      </div>
+    </section>
+
+    <!-- Table Overview View (Full Screen when active) -->
+    <section id="tablePanel" class="hidden flex-1 h-full bg-slate-50 overflow-y-auto p-4 sm:p-6 z-20">
+      <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- 7-Day Columns Quick Matrix -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span>🗓️</span> 7 天每日行程快速總覽（看板視圖）
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">一眼掌握每天去哪裡，點擊項目可直接編輯或跳轉地圖定位</p>
+            </div>
+            <button id="tableAddSpotBtn" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 shadow-sm transition">
+              <span>➕</span> 新增行程點
+            </button>
+          </div>
+          <div id="sevenDayGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Detailed Day-by-Day Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-4 sm:px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/60">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span>📋</span> 每日行程詳細表格（含時間與交通備註）
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5" id="tableCountSubtitle">顯示全部行程明細</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+                  <th class="py-3 px-4 font-bold whitespace-nowrap w-36">天數 / 主題</th>
+                  <th class="py-3 px-3 font-bold whitespace-nowrap w-14 text-center">順序</th>
+                  <th class="py-3 px-4 font-bold whitespace-nowrap w-36">時間 / 時段</th>
+                  <th class="py-3 px-4 font-bold min-w-[180px]">景點 / 活動名稱</th>
+                  <th class="py-3 px-4 font-bold min-w-[240px]">交通方式與討論備註</th>
+                  <th class="py-3 px-4 font-bold whitespace-nowrap text-right w-36">操作</th>
+                </tr>
+              </thead>
+              <tbody id="itineraryTableBody" class="divide-y divide-slate-200">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-16 right-4 z-50 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm transition-opacity duration-300 opacity-0 pointer-events-none">
+    提示訊息
+  </div>
+
+  <!-- Add / Edit Modal -->
+  <div id="modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 my-auto max-h-[92vh] flex flex-col">
+      <div class="bg-indigo-600 text-white px-5 py-3.5 flex justify-between items-center flex-shrink-0">
+        <h3 id="modalTitle" class="font-bold text-base">新增景點</h3>
+        <button id="closeModalBtn" class="text-white hover:text-indigo-200 text-xl font-bold">&times;</button>
+      </div>
+      <form id="spotForm" class="p-4 sm:p-5 space-y-3.5 text-sm overflow-y-auto flex-1">
+        <input type="hidden" id="spotId">
+        <input type="hidden" id="spotLat" value="35.6895">
+        <input type="hidden" id="spotLng" value="139.6917">
+        
+        <!-- Place Search & Map Picker -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
+          <label class="block text-xs font-bold text-slate-700">
+            🔍 搜尋地點定位
+          </label>
+          <div class="flex gap-1.5 relative">
+            <input type="text" id="placeSearchInput" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white" placeholder="輸入景點、餐廳或飯店名稱（如：淺草寺、澀谷SKY）">
+            <button type="button" id="placeSearchBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs whitespace-nowrap shadow-sm transition">
+              搜尋
+            </button>
+          </div>
+
+          <!-- Quick Hot Spots Pills -->
+          <div class="flex items-center gap-1 flex-wrap text-[11px]">
+            <span class="text-slate-400 font-medium">熱門景點：</span>
+            <button type="button" class="quick-spot-pill px-2 py-0.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-full transition" data-name="淺草寺 雷門" data-lat="35.714765" data-lng="139.796655">淺草寺</button>
+            <button type="button" class="quick-spot-pill px-2 py-0.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-full transition" data-name="東京鐵塔" data-lat="35.658581" data-lng="139.745433">東京鐵塔</button>
+            <button type="button" class="quick-spot-pill px-2 py-0.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-full transition" data-name="SHIBUYA SKY (澀谷SKY)" data-lat="35.658447" data-lng="139.702164">澀谷SKY</button>
+            <button type="button" class="quick-spot-pill px-2 py-0.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-full transition" data-name="豐洲千客萬來" data-lat="35.645736" data-lng="139.784056">豐洲市場</button>
+            <button type="button" class="quick-spot-pill px-2 py-0.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-full transition" data-name="teamLab Planets TOKYO" data-lat="35.649120" data-lng="139.789779">teamLab</button>
+            <button type="button" class="quick-spot-pill px-2 py-0.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-full transition" data-name="東京華納兄弟哈利波特影城" data-lat="35.745184" data-lng="139.646028">哈利波特影城</button>
+          </div>
+
+          <!-- Search Results Dropdown -->
+          <div id="searchResultsBox" class="hidden bg-white border border-slate-200 rounded-lg shadow-lg max-h-44 overflow-y-auto divide-y divide-slate-100 text-xs">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Mini Interactive Map Picker -->
+          <div class="relative rounded-lg overflow-hidden border border-slate-300 shadow-inner">
+            <div id="pickerMap" class="w-full h-44 bg-slate-100 z-10"></div>
+            <div class="bg-slate-800/80 text-white text-[11px] px-2.5 py-1 flex items-center justify-between">
+              <span>點選地圖或拖曳地標可微調位置</span>
+              <span id="coordPreviewLabel" class="font-mono text-indigo-200"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spot Details -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">景點 / 活動名稱 <span class="text-rose-500">*</span></label>
+          <input type="text" id="spotName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium" placeholder="例如：東京晴空塔">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">歸屬天數</label>
+            <select id="spotDay" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+              <option value="1">D1 (週三 - 抵達/晴空塔)</option>
+              <option value="2">D2 (週四 - 迪士尼海洋)</option>
+              <option value="3">D3 (週五 - 橫濱親子)</option>
+              <option value="4">D4 (週六 - 樂園二選一)</option>
+              <option value="5">D5 (週日 - 河口湖自駕)</option>
+              <option value="6">D6 (週一 - 河口湖/市區)</option>
+              <option value="7">D7 (週二 - 採買/回程)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">建議時間 / 時段</label>
+            <input type="text" id="spotTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例如：14:00~17:00">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">重點備註 / 交通說明</label>
+          <textarea id="spotNotes" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="填寫票券、轉車方式或討論重點..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" id="cancelModalBtn" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">取消</button>
+          <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Day Configuration with distinct colors
+    const DAYS_CONFIG = {
+      1: { name: "D1 週三", label: "抵達 & 晴空塔", color: "#3B82F6", stroke: "#2563EB" },
+      2: { name: "D2 週四", label: "迪士尼海洋", color: "#EC4899", stroke: "#DB2777" },
+      3: { name: "D3 週五", label: "橫濱親子遊", color: "#10B981", stroke: "#059669" },
+      4: { name: "D4 週六", label: "樂園二選一", color: "#F59E0B", stroke: "#D97706" },
+      5: { name: "D5 週日", label: "河口湖自駕", color: "#8B5CF6", stroke: "#7C3AED" },
+      6: { name: "D6 週一", label: "河口湖 & 採買", color: "#06B6D4", stroke: "#0891B2" },
+      7: { name: "D7 週二", label: "上野採買 & 返台", color: "#64748B", stroke: "#475569" }
+    };
+
+    // Pre-loaded initial Tokyo itinerary data
+    const INITIAL_SPOTS = [
+      { id: "s1", day: 1, name: "成田國際機場", time: "12:35 降落", lat: 35.771986, lng: 140.392850, notes: "搭乘 Skyliner 直達上野 (約41~51分)" },
+      { id: "s2", day: 1, name: "上野飯店 Check-in", time: "約 14:30", lat: 35.714167, lng: 139.777400, notes: "推薦住上野，放行李後輕裝出發" },
+      { id: "s3", day: 1, name: "東京晴空塔 & 墨田水族館", time: "16:00~20:00", lat: 35.710063, lng: 139.810700, notes: "晴空塔逛街＋墨田水族館，打烊約 21:00" },
+      
+      { id: "s4", day: 2, name: "東京迪士尼海洋 (Tokyo DisneySea)", time: "08:30~21:00", lat: 35.626700, lng: 139.885100, notes: "整天暢玩，大行李寄放上野，帶背包出發" },
+      { id: "s5", day: 2, name: "迪士尼大使大飯店 (住宿)", time: "閉園後入住", lat: 35.631800, lng: 139.886000, notes: "已確認當晚入住，免去晚上擠電車奔波" },
+
+      { id: "s6", day: 3, name: "橫濱麵包超人兒童博物館", time: "10:30~13:30", lat: 35.460800, lng: 139.625600, notes: "舞濱直達橫濱巴士 (約50分) 或新木場轉乘" },
+      { id: "s7", day: 3, name: "橫濱水陸兩用船 & 摩天輪", time: "14:00~17:30", lat: 35.455300, lng: 139.637000, notes: "港未來21區搭船、摩天輪與紅磚倉庫逛街" },
+      { id: "s8", day: 3, name: "返回上野飯店 Check-in", time: "18:30", lat: 35.714167, lng: 139.777400, notes: "搭 JR 上野東京線直達上野，領回大行李" },
+
+      { id: "s9", day: 4, name: "三麗鷗彩虹樂園 (選項A)", time: "09:30~17:00", lat: 35.624700, lng: 139.429300, notes: "全室內親子樂園，上野搭車至新宿轉京王線約1小時" },
+      { id: "s10", day: 4, name: "あらかわ荒川遊園地 (選項B)", time: "09:00~17:00", lat: 35.753300, lng: 139.754700, notes: "近上野平價遊樂園，建議二選一以免兩邊趕路" },
+      { id: "s11", day: 4, name: "續住上野飯店 (不換房)", time: "傍晚返回", lat: 35.714167, lng: 139.777400, notes: "免搬家，養精蓄銳準備隔天河口湖" },
+
+      { id: "s12", day: 5, name: "新宿車站 (搭乘富士回遊)", time: "08:30", lat: 35.689600, lng: 139.700600, notes: "上野搭山手線到新宿，搭直達特急免換車" },
+      { id: "s13", day: 5, name: "河口湖站租車取車", time: "10:30", lat: 35.498200, lng: 138.768800, notes: "抵達河口湖站租車自駕，避開市區塞車" },
+      { id: "s14", day: 5, name: "河口湖天上山纜車 & 遊覽船", time: "11:30~14:00", lat: 35.503600, lng: 138.772500, notes: "眺望富士山美景，人潮多需預留排隊時間" },
+      { id: "s15", day: 5, name: "富士 SUBARU 樂園", time: "14:30~17:00", lat: 35.441800, lng: 138.752300, notes: "森林探索戶外園區，大人小孩狗狗都適合" },
+      { id: "s16", day: 5, name: "河口湖溫泉旅館 (住宿)", time: "傍晚入住", lat: 35.508500, lng: 138.765000, notes: "一泊二食享受富士山景色" },
+
+      { id: "s17", day: 6, name: "河口湖還車 & 搭車回東京", time: "11:30~13:30", lat: 35.498200, lng: 138.768800, notes: "中午搭乘直達電車/巴士返回東京市區" },
+      { id: "s18", day: 6, name: "上野市區最後採買", time: "15:00~20:00", lat: 35.711500, lng: 139.774700, notes: "入住上野，集中在阿美橫町、多慶屋採購" },
+
+      { id: "s19", day: 7, name: "阿美橫町晨間最後補貨", time: "10:00~11:30", lat: 35.711500, lng: 139.774700, notes: "藥妝與零食最後打包" },
+      { id: "s20", day: 7, name: "出發成田機場 (15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "搭乘 Skyliner 直達成田，13:10前抵達櫃檯" }
+    ];
+
+    // State
+    let spots = [];
+    let currentFilter = "all"; // 'all' or day number
+    let currentViewMode = "split"; // 'split' (map + cards) or 'table' (daily overview table)
+    let activeSpotId = null;
+    let map = null;
+    let markersLayer = null;
+    let polylinesLayer = null;
+    let markerMap = {}; // id -> L.marker
+    let db = null;
+    let spotsRef = null;
+    let isInitialLoad = true;
+
+    // Auto Cloud Sync (Direct connection to asia-southeast1 Realtime Database — no API key needed)
+    const DEFAULT_PROJECT_ID = "tokyo-trip-2027-fc2d6";
+    const DEFAULT_DB_URL = "https://tokyo-trip-2027-fc2d6-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+    function renderAll(fitMapBounds = true) {
+      renderFilters();
+      renderItinerary();
+      renderMap(fitMapBounds);
+      renderTable();
+    }
+
+    function initFirebase() {
+      try {
+        if (typeof firebase !== "undefined") {
+          if (!firebase.apps.length) {
+            firebase.initializeApp({
+              databaseURL: DEFAULT_DB_URL,
+              projectId: DEFAULT_PROJECT_ID
+            });
+          }
+          db = firebase.database();
+          spotsRef = db.ref("tokyo_trip/spots");
+
+          spotsRef.on("value", (snapshot) => {
+            const data = snapshot.val();
+            updateSyncStatus("online", "雲端即時同步");
+            if (data && Array.isArray(data) && data.length > 0) {
+              spots = data;
+              try { localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots)); } catch(e){}
+              renderAll(isInitialLoad);
+              if (!isInitialLoad) {
+                showToast("已同步最新行程變更");
+              }
+            } else {
+              spots = [...INITIAL_SPOTS];
+              spotsRef.set(INITIAL_SPOTS);
+              renderAll(true);
+            }
+            isInitialLoad = false;
+          }, () => {
+            updateSyncStatus("offline", "行程自動儲存");
+          });
+        }
+      } catch (err) {
+        updateSyncStatus("offline", "行程自動儲存");
+      }
+    }
+
+    function updateSyncStatus(status, text) {
+      const dot = document.getElementById("syncDot");
+      const label = document.getElementById("syncText");
+      if (!dot || !label) return;
+
+      label.textContent = text;
+      dot.className = "w-2 h-2 rounded-full";
+      if (status === "online") {
+        dot.classList.add("bg-emerald-400");
+      } else if (status === "saving") {
+        dot.classList.add("bg-sky-300", "animate-ping");
+      } else {
+        dot.classList.add("bg-amber-400", "animate-pulse");
+      }
+    }
+
+    // Load data from localStorage or default
+    function loadData() {
+      try {
+        const saved = localStorage.getItem("tokyo_trip_spots");
+        if (saved) {
+          spots = JSON.parse(saved);
+        } else {
+          spots = [...INITIAL_SPOTS];
+        }
+      } catch (e) {
+        spots = [...INITIAL_SPOTS];
+      }
+    }
+
+    function saveData(actionMsg) {
+      // 1. 本地儲存備份
+      try {
+        localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots));
+      } catch (e) {}
+
+      // 2. 雲端即時同步
+      if (spotsRef) {
+        updateSyncStatus("saving", "同步上傳中...");
+        spotsRef.set(spots).then(() => {
+          updateSyncStatus("online", "雲端即時同步中");
+          if (actionMsg) showToast(actionMsg);
+        }).catch((err) => {
+          console.error("Firebase save failed:", err);
+          updateSyncStatus("offline", "同步失敗(暫存本地)");
+          if (actionMsg) showToast(actionMsg + " (暫存於本地)");
+        });
+      } else {
+        if (actionMsg) showToast(actionMsg);
+      }
+    }
+
+    // Toast helper
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.remove("opacity-0", "pointer-events-none");
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "pointer-events-none");
+      }, 2500);
+    }
+
+    // Init Leaflet Map
+    function initMap() {
+      map = L.map("map").setView([35.68, 139.65], 10);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+        attribution: "© OpenStreetMap contributors"
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+      polylinesLayer = L.layerGroup().addTo(map);
+
+      // Click map to add spot
+      map.on("click", (e) => {
+        openModalForNew(e.latlng.lat, e.latlng.lng);
+      });
+    }
+
+    // Render Filters
+    function renderFilters() {
+      const container = document.getElementById("dayFilters");
+      let html = `
+        <button data-day="all" class="filter-btn px-3 py-1 text-xs font-bold rounded-full transition whitespace-nowrap ${currentFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+          全部天數 (${spots.length})
+        </button>
+      `;
+
+      for (let d = 1; d <= 7; d++) {
+        const cfg = DAYS_CONFIG[d];
+        const isCurrent = currentFilter === String(d);
+        const count = spots.filter(s => s.day === d).length;
+        html += `
+          <button data-day="${d}" class="filter-btn flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full transition whitespace-nowrap ${isCurrent ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" style="${isCurrent ? 'background-color:' + cfg.stroke : ''}">
+            <span class="w-2.5 h-2.5 rounded-full inline-block border border-white/60" style="background-color: ${cfg.color}"></span>
+            <span>${cfg.name}</span>
+            <span class="opacity-80 text-[10px]">(${count})</span>
+          </button>
+        `;
+      }
+      container.innerHTML = html;
+
+      // Attach filter listeners
+      container.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentFilter = btn.getAttribute("data-day");
+          activeSpotId = null;
+          // 若在「地圖與卡片」模式下點選天數篩選，確保卡片列表可見
+          if (currentViewMode === "split") {
+            ensureSplitPanelsVisible("list");
+          }
+          renderAll(true);
+        });
+      });
+    }
+
+    // Focus a specific spot on the map and open its popup
+    function focusSpotOnMap(spotId) {
+      const spot = spots.find(s => s.id === spotId);
+      if (!spot || !map) return;
+
+      activeSpotId = spotId;
+
+      // 若目前在表格模式，先切換回地圖與卡片模式
+      if (currentViewMode !== "split") {
+        switchViewMode("split");
+      }
+
+      // 在手機版(< 640px)切換到地圖分頁；在電腦版(>= 640px)保持左側卡片與右側地圖同時顯示！
+      if (window.innerWidth < 640) {
+        switchMobileTab("map");
+      } else {
+        ensureSplitPanelsVisible();
+      }
+
+      renderItinerary();
+
+      setTimeout(() => {
+        map.invalidateSize();
+        map.flyTo([spot.lat, spot.lng], 15, { duration: 0.8 });
+        const marker = markerMap[spot.id];
+        if (marker) {
+          setTimeout(() => marker.openPopup(), 350);
+        }
+      }, 100);
+    }
+
+    // Render Itinerary Cards
+    function renderItinerary() {
+      const container = document.getElementById("itineraryList");
+      const filtered = currentFilter === "all" ? spots : spots.filter(s => s.day === Number(currentFilter));
+      
+      document.getElementById("spotCountLabel").textContent = `顯示 ${filtered.length} 個行程地點`;
+      const tabListBtn = document.getElementById("tabList");
+      if (tabListBtn) {
+        tabListBtn.textContent = `📋 行程卡片列表 (${filtered.length})`;
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-slate-400">
+            <p class="text-3xl mb-2">📍</p>
+            <p>這一天目前沒有安排景點</p>
+            <button id="emptyAddBtn" class="mt-3 text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100">點此新增景點</button>
+          </div>
+        `;
+        const emptyBtn = document.getElementById("emptyAddBtn");
+        if (emptyBtn) {
+          emptyBtn.addEventListener("click", () => openModalForNew());
+        }
+        return;
+      }
+
+      // Group count per day to show daily sequence number
+      const dayCounters = {};
+      let html = "";
+      filtered.forEach((spot) => {
+        dayCounters[spot.day] = (dayCounters[spot.day] || 0) + 1;
+        const seqNum = dayCounters[spot.day];
+        const cfg = DAYS_CONFIG[spot.day] || { name: `D${spot.day}`, label: "", color: "#64748B", stroke: "#475569" };
+        const isActive = activeSpotId === spot.id;
+
+        html += `
+          <div class="spot-card rounded-xl p-3.5 border transition cursor-pointer ${isActive ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/30 shadow-md' : 'bg-white border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md'}" data-id="${spot.id}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0 shadow-sm" style="background-color: ${cfg.stroke}">
+                  ${seqNum}
+                </span>
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm hover:text-indigo-600 transition">${spot.name}</h4>
+                  <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-1">
+                    <span class="px-2 py-0.5 rounded-md font-bold text-[11px] text-white" style="background-color: ${cfg.stroke}">${cfg.name}</span>
+                    <span class="font-medium text-slate-600">🕒 ${spot.time || '彈性時間'}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button class="locate-btn px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition" data-id="${spot.id}" title="在地圖上定位">
+                  📍定位
+                </button>
+                <button class="edit-btn p-1 text-slate-400 hover:text-indigo-600 rounded" data-id="${spot.id}" title="編輯">
+                  ✏️
+                </button>
+                <button class="delete-btn p-1 text-slate-400 hover:text-rose-600 rounded" data-id="${spot.id}" title="刪除">
+                  🗑️
+                </button>
+              </div>
+            </div>
+            ${spot.notes ? `<p class="mt-2 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed">${spot.notes}</p>` : ''}
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // Card click & Locate button events
+      container.querySelectorAll(".spot-card").forEach(card => {
+        card.addEventListener("click", (e) => {
+          if (e.target.closest(".edit-btn") || e.target.closest(".delete-btn")) return;
+          const id = card.getAttribute("data-id");
+          focusSpotOnMap(id);
+        });
+      });
+
+      // Edit click
+      container.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-id");
+          openModalForEdit(id);
+        });
+      });
+
+      // Delete click
+      container.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-id");
+          deleteSpot(id);
+        });
+      });
+    }
+
+    // Render Markers & Solid High-Contrast Route Lines on Leaflet
+    function renderMap(shouldFitBounds = true) {
+      if (!map) return;
+      markersLayer.clearLayers();
+      polylinesLayer.clearLayers();
+      markerMap = {};
+
+      const daysToRender = currentFilter === "all" ? [1,2,3,4,5,6,7] : [Number(currentFilter)];
+      const bounds = [];
+
+      daysToRender.forEach(d => {
+        const daySpots = spots.filter(s => s.day === d);
+        if (daySpots.length === 0) return;
+
+        const cfg = DAYS_CONFIG[d];
+        const lineCoords = [];
+
+        daySpots.forEach((spot, idx) => {
+          const latlng = [spot.lat, spot.lng];
+          lineCoords.push(latlng);
+          bounds.push(latlng);
+
+          // Marker icon (Larger, clearer with solid border)
+          const icon = L.divIcon({
+            className: "custom-div-icon",
+            html: `<div class="custom-marker" style="background-color: ${cfg.stroke}; width: 30px; height: 30px; font-size: 12px; border: 2.5px solid white;">${idx + 1}</div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+          });
+
+          const marker = L.marker(latlng, { icon }).addTo(markersLayer);
+          markerMap[spot.id] = marker;
+
+          const popupContent = `
+            <div class="p-1 min-w-[200px]">
+              <div class="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white inline-block mb-1" style="background-color: ${cfg.stroke}">${cfg.name} • 第 ${idx + 1} 站</div>
+              <div class="font-bold text-sm text-slate-800 mt-0.5">${spot.name}</div>
+              <div class="text-xs text-slate-600 font-medium mt-1">🕒 ${spot.time || '整天 / 彈性'}</div>
+              ${spot.notes ? `<div class="text-xs text-slate-600 mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 leading-relaxed">${spot.notes}</div>` : ''}
+              <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-end gap-3 text-xs">
+                <button class="popup-edit text-indigo-600 font-bold hover:underline" data-id="${spot.id}">✏️ 編輯</button>
+                <button class="popup-del text-rose-600 font-bold hover:underline" data-id="${spot.id}">🗑️ 刪除</button>
+              </div>
+            </div>
+          `;
+          marker.bindPopup(popupContent);
+
+          marker.on("popupopen", (e) => {
+            activeSpotId = spot.id;
+            const el = e.popup.getElement();
+            el.querySelector(".popup-edit")?.addEventListener("click", () => {
+              openModalForEdit(spot.id);
+            });
+            el.querySelector(".popup-del")?.addEventListener("click", () => {
+              deleteSpot(spot.id);
+            });
+          });
+        });
+
+        // Draw high-contrast SOLID line (White halo + Solid colored core)
+        if (lineCoords.length > 1) {
+          // 1. White outer casing for high contrast against map roads
+          L.polyline(lineCoords, {
+            color: "#FFFFFF",
+            weight: 9,
+            opacity: 0.9,
+            lineCap: "round",
+            lineJoin: "round"
+          }).addTo(polylinesLayer);
+
+          // 2. Bold solid colored route line
+          const routeLine = L.polyline(lineCoords, {
+            color: cfg.stroke,
+            weight: 5,
+            opacity: 0.95,
+            lineCap: "round",
+            lineJoin: "round"
+          }).addTo(polylinesLayer);
+
+          routeLine.bindTooltip(`${cfg.name} (${cfg.label}) 順遊路線`, {
+            sticky: true,
+            className: "font-bold text-xs"
+          });
+        }
+      });
+
+      if (shouldFitBounds && bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [45, 45], maxZoom: 14 });
+      }
+    }
+
+    // Render Daily Overview Table & 7-Day Kanban Matrix
+    function renderTable() {
+      const gridContainer = document.getElementById("sevenDayGrid");
+      const tbody = document.getElementById("itineraryTableBody");
+      const subtitle = document.getElementById("tableCountSubtitle");
+      if (!gridContainer || !tbody) return;
+
+      // 1. Render 7-Day Columns Quick Matrix
+      let gridHtml = "";
+      for (let d = 1; d <= 7; d++) {
+        const cfg = DAYS_CONFIG[d];
+        const daySpots = spots.filter(s => s.day === d);
+        const isDimmed = currentFilter !== "all" && Number(currentFilter) !== d;
+
+        gridHtml += `
+          <div class="rounded-xl border ${isDimmed ? 'opacity-45 border-slate-200 bg-slate-50' : 'border-slate-200 bg-white shadow-sm'} flex flex-col overflow-hidden transition">
+            <div class="px-3 py-2 text-white font-bold text-xs flex items-center justify-between" style="background-color: ${cfg.stroke}">
+              <span>${cfg.name}</span>
+              <span class="text-[11px] bg-black/20 px-1.5 py-0.5 rounded">${daySpots.length} 站</span>
+            </div>
+            <div class="px-3 py-1.5 bg-slate-100 border-b border-slate-200 text-[11px] font-semibold text-slate-600 truncate">
+              ${cfg.label}
+            </div>
+            <div class="p-2.5 flex-1 space-y-2">
+              ${daySpots.length === 0 ? `<div class="text-xs text-slate-400 text-center py-4">尚無行程</div>` : daySpots.map((s, i) => `
+                <div class="group p-2 rounded-lg bg-slate-50 hover:bg-indigo-50/80 border border-slate-200/80 hover:border-indigo-300 transition cursor-pointer text-xs" data-locate-id="${s.id}">
+                  <div class="flex items-center justify-between gap-1 text-[10px] text-slate-500 font-semibold">
+                    <span>#${i + 1} ${s.time || '彈性'}</span>
+                    <button class="table-edit-btn text-indigo-600 opacity-80 hover:opacity-100 hover:underline" data-id="${s.id}" title="編輯">編輯</button>
+                  </div>
+                  <div class="font-bold text-slate-800 mt-0.5 leading-snug">${s.name}</div>
+                </div>
+              `).join("")}
+            </div>
+            <div class="p-2 border-t border-slate-100 bg-slate-50/50">
+              <button class="day-quick-add w-full py-1 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded transition" data-day="${d}">
+                ➕ 新增 D${d} 景點
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      gridContainer.innerHTML = gridHtml;
+
+      // 2. Render Detailed Table Rows
+      const daysToRender = currentFilter === "all" ? [1,2,3,4,5,6,7] : [Number(currentFilter)];
+      const filteredTotal = currentFilter === "all" ? spots.length : spots.filter(s => s.day === Number(currentFilter)).length;
+      if (subtitle) {
+        subtitle.textContent = currentFilter === "all"
+          ? `顯示全部 7 天，共 ${filteredTotal} 個行程點`
+          : `僅顯示 ${DAYS_CONFIG[Number(currentFilter)]?.name}，共 ${filteredTotal} 個行程點`;
+      }
+
+      let rowsHtml = "";
+      daysToRender.forEach(d => {
+        const cfg = DAYS_CONFIG[d];
+        const daySpots = spots.filter(s => s.day === d);
+
+        if (daySpots.length === 0) {
+          rowsHtml += `
+            <tr class="hover:bg-slate-50">
+              <td class="py-3 px-4 align-top">
+                <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white" style="background-color: ${cfg.stroke}">${cfg.name}</span>
+                <div class="text-xs text-slate-500 font-medium mt-1">${cfg.label}</div>
+              </td>
+              <td colspan="4" class="py-3 px-4 text-slate-400 text-xs italic">當日尚未安排行程</td>
+              <td class="py-3 px-4 text-right">
+                <button class="day-quick-add text-xs text-indigo-600 font-semibold hover:underline" data-day="${d}">➕ 新增景點</button>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        daySpots.forEach((spot, idx) => {
+          rowsHtml += `
+            <tr class="hover:bg-indigo-50/40 transition ${idx === 0 ? 'border-t-2 border-slate-200' : ''}">
+              <td class="py-3.5 px-4 align-top">
+                ${idx === 0 ? `
+                  <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-sm" style="background-color: ${cfg.stroke}">${cfg.name}</span>
+                  <div class="text-xs text-slate-600 font-semibold mt-1">${cfg.label}</div>
+                ` : `
+                  <span class="text-xs font-bold text-slate-400 pl-1">${cfg.name}</span>
+                `}
+              </td>
+              <td class="py-3.5 px-3 align-top text-center">
+                <span class="w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold text-white" style="background-color: ${cfg.stroke}">
+                  ${idx + 1}
+                </span>
+              </td>
+              <td class="py-3.5 px-4 align-top whitespace-nowrap">
+                <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200">
+                  🕒 ${spot.time || '彈性時間'}
+                </span>
+              </td>
+              <td class="py-3.5 px-4 align-top">
+                <div class="font-bold text-slate-800 text-sm">${spot.name}</div>
+              </td>
+              <td class="py-3.5 px-4 align-top">
+                <div class="text-xs text-slate-600 leading-relaxed">${spot.notes || '<span class="text-slate-400">-</span>'}</div>
+              </td>
+              <td class="py-3.5 px-4 align-top whitespace-nowrap text-right">
+                <div class="inline-flex items-center gap-1.5">
+                  <button class="table-locate-btn px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-bold transition" data-id="${spot.id}" title="切回地圖並定位">
+                    📍 地圖
+                  </button>
+                  <button class="table-edit-btn px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-semibold transition" data-id="${spot.id}">
+                    ✏️ 編輯
+                  </button>
+                  <button class="table-del-btn px-2 py-1 text-slate-400 hover:text-rose-600 rounded-md text-xs transition" data-id="${spot.id}" title="刪除">
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+      });
+
+      tbody.innerHTML = rowsHtml;
+
+      // Bind Table & Matrix listeners
+      const tablePanel = document.getElementById("tablePanel");
+      tablePanel.querySelectorAll("[data-locate-id]").forEach(el => {
+        el.addEventListener("click", (e) => {
+          if (e.target.closest(".table-edit-btn")) return;
+          focusSpotOnMap(el.getAttribute("data-locate-id"));
+        });
+      });
+
+      tablePanel.querySelectorAll(".table-locate-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          focusSpotOnMap(btn.getAttribute("data-id"));
+        });
+      });
+
+      tablePanel.querySelectorAll(".table-edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openModalForEdit(btn.getAttribute("data-id"));
+        });
+      });
+
+      tablePanel.querySelectorAll(".table-del-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteSpot(btn.getAttribute("data-id"));
+        });
+      });
+
+      tablePanel.querySelectorAll(".day-quick-add").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const d = btn.getAttribute("data-day");
+          openModalForNew(35.6895, 139.6917, d);
+        });
+      });
+    }
+
+    // Built-in popular Tokyo & Kanto landmarks for instant 0ms search in Traditional Chinese
+    const TOKYO_PRESETS = [
+      { name: "淺草寺 (雷門・仲見世通)", address: "東京都台東區淺草2-3-1", lat: 35.714765, lng: 139.796655, keywords: "淺草寺 雷門 仲見世通 asakusa sensoji" },
+      { name: "東京晴空塔 (Tokyo Skytree)", address: "東京都墨田區押上1-1-2", lat: 35.710063, lng: 139.810700, keywords: "東京晴空塔 押上 墨田水族館 skytree" },
+      { name: "東京鐵塔 (Tokyo Tower)", address: "東京都港區芝公園4-2-8", lat: 35.658581, lng: 139.745433, keywords: "東京鐵塔 芝公園 增上寺 tokyo tower" },
+      { name: "SHIBUYA SKY (澀谷SKY展望台)", address: "東京都澀谷區澀谷2-24-12", lat: 35.658447, lng: 139.702164, keywords: "澀谷sky 涉谷sky shibuya sky 十字路口" },
+      { name: "東京迪士尼樂園 (Tokyo Disneyland)", address: "千葉縣浦安市舞濱1-1", lat: 35.632896, lng: 139.880394, keywords: "東京迪士尼樂園 陸地 disneyland 舞濱" },
+      { name: "東京迪士尼海洋 (Tokyo DisneySea)", address: "千葉縣浦安市舞濱1-13", lat: 35.626700, lng: 139.885100, keywords: "東京迪士尼海洋 disneysea 舞濱" },
+      { name: "豐洲千客萬來 (豐洲市場)", address: "東京都江東區豐洲6-5-1", lat: 35.645736, lng: 139.784056, keywords: "豐洲市場 豐洲千客萬來 壽司大 toyosu" },
+      { name: "築地場外市場", address: "東京都中央區築地4丁目", lat: 35.665486, lng: 139.770667, keywords: "築地市場 築地場外市場 海鮮丼 tsukiji" },
+      { name: "teamLab Planets TOKYO (豐洲)", address: "東京都江東區豐洲6-1-16", lat: 35.649120, lng: 139.789779, keywords: "teamlab planets 豐洲 美術館" },
+      { name: "teamLab Borderless (麻布台之丘)", address: "東京都港區麻布台1-2-4", lat: 35.660400, lng: 139.740500, keywords: "teamlab borderless 麻布台之丘 azabudai" },
+      { name: "東京華納兄弟哈利波特影城", address: "東京都練馬區春日町1-1-7 (豐島園)", lat: 35.745184, lng: 139.646028, keywords: "哈利波特影城 豐島園 harry potter" },
+      { name: "三鷹之森吉卜力美術館", address: "東京都三鷹市下連雀1-1-83", lat: 35.696238, lng: 139.570432, keywords: "吉卜力美術館 三鷹 龍貓 吉祥寺 ghibli" },
+      { name: "明治神宮 & 原宿竹下通", address: "東京都澀谷區代代木神園町1-1", lat: 35.676398, lng: 139.699326, keywords: "明治神宮 原宿 表參道 竹下通 harajuku" },
+      { name: "上野恩賜公園 & 上野動物園", address: "東京都台東區上野公園", lat: 35.715556, lng: 139.774096, keywords: "上野公園 上野動物園 阿美橫町 ueno" },
+      { name: "上野阿美橫町商店街", address: "東京都台東區上野6丁目", lat: 35.711500, lng: 139.774700, keywords: "阿美橫町 多慶屋 二木之菓子 上野採買" },
+      { name: "東京車站 (一番街・丸之內)", address: "東京都千代田區丸之內1丁目", lat: 35.681236, lng: 139.767125, keywords: "東京車站 東京一番街 動漫街 tokyo station" },
+      { name: "銀座商圈 (GINZA SIX・三越)", address: "東京都中央區銀座4丁目", lat: 35.671222, lng: 139.765008, keywords: "銀座 ginza six 三越 購物 Uniqlo" },
+      { name: "秋葉原電器街 (Radio會館・扭蛋)", address: "東京都千代田區外神田1丁目", lat: 35.698353, lng: 139.773114, keywords: "秋葉原 電器街 動漫 扭蛋 akihabara" },
+      { name: "新宿車站 & 歌舞伎町 (哥吉拉頭)", address: "東京都新宿區歌舞伎町1丁目", lat: 35.693825, lng: 139.703356, keywords: "新宿 歌舞伎町 哥吉拉 東口 shinjuku" },
+      { name: "新宿御苑", address: "東京都新宿區內藤町11", lat: 35.685176, lng: 139.710052, keywords: "新宿御苑 賞櫻 公園" },
+      { name: "池袋太陽城 (Sunshine City・寶可夢中心)", address: "東京都豐島區東池袋3-1", lat: 35.728926, lng: 139.719553, keywords: "池袋 太陽城 寶可夢中心 水族館 ikebukuro" },
+      { name: "台場海濱公園 & 獨角獸鋼彈 (DiverCity)", address: "東京都江東區青海1-1-10", lat: 35.625069, lng: 139.775548, keywords: "台場 鋼彈 divercity 自由女神 odaiba" },
+      { name: "六本木之丘展望台 (Roppongi Hills)", address: "東京都港區六本木6-10-1", lat: 35.660464, lng: 139.729249, keywords: "六本木之丘 展望台 美術館 roppongi" },
+      { name: "豪德寺 (招財貓寺)", address: "東京都世田谷區豪德寺2-24-7", lat: 35.648675, lng: 139.647427, keywords: "豪德寺 招財貓 世田谷線" },
+      { name: "橫濱紅磚倉庫 & 港未來21", address: "神奈川縣橫濱市中區新港1-1", lat: 35.452627, lng: 139.642897, keywords: "橫濱 紅磚倉庫 港未來 摩天輪 纜車 yokohama" },
+      { name: "橫濱八景島海島樂園", address: "神奈川縣橫濱市金澤區八景島", lat: 35.336669, lng: 139.645569, keywords: "八景島 海島樂園 水族館 橫濱" },
+      { name: "河口湖大石公園 (富士山花海)", address: "山梨縣南都留郡富士河口湖町大石2585", lat: 35.523027, lng: 138.745847, keywords: "河口湖 大石公園 富士山 薰衣草 掃帚草" },
+      { name: "新倉山淺間公園 (忠靈塔・五重塔)", address: "山梨縣富士吉田市淺間2-4-1", lat: 35.501241, lng: 138.800051, keywords: "新倉山淺間公園 下吉田 忠靈塔 五重塔 富士山" },
+      { name: "忍野八海", address: "山梨縣南都留郡忍野村忍草", lat: 35.460053, lng: 138.832761, keywords: "忍野八海 富士山 河口湖" },
+      { name: "富士急樂園 (湯瑪士小火車樂園)", address: "山梨縣富士吉田市新西原5-6-1", lat: 35.486764, lng: 138.780511, keywords: "富士急樂園 湯瑪士小火車 河口湖" },
+      { name: "成田國際機場 (NRT)", address: "千葉縣成田市古込1-1", lat: 35.771986, lng: 140.392850, keywords: "成田機場 narita airport nrt" },
+      { name: "東京羽田國際機場 (HND)", address: "東京都大田區羽田空港", lat: 35.549393, lng: 139.779839, keywords: "羽田機場 haneda airport hnd" }
+    ];
+
+    let pickerMap = null;
+    let pickerMarker = null;
+    let searchDebounceTimer = null;
+
+    function initOrUpdatePickerMap(lat, lng) {
+      const numLat = Number(lat) || 35.6895;
+      const numLng = Number(lng) || 139.6917;
+      setModalCoordinates(numLat, numLng);
+
+      setTimeout(() => {
+        if (!pickerMap) {
+          pickerMap = L.map("pickerMap").setView([numLat, numLng], 14);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 18,
+            attribution: "© OSM"
+          }).addTo(pickerMap);
+
+          pickerMarker = L.marker([numLat, numLng], { draggable: true }).addTo(pickerMap);
+
+          // Drag marker to fine-tune position
+          pickerMarker.on("dragend", (e) => {
+            const pos = e.target.getLatLng();
+            setModalCoordinates(pos.lat, pos.lng);
+          });
+
+          // Click map to move marker
+          pickerMap.on("click", (e) => {
+            pickerMarker.setLatLng(e.latlng);
+            setModalCoordinates(e.latlng.lat, e.latlng.lng);
+          });
+        } else {
+          pickerMap.invalidateSize();
+          pickerMap.setView([numLat, numLng], 14);
+          pickerMarker.setLatLng([numLat, numLng]);
+        }
+      }, 80);
+    }
+
+    function setModalCoordinates(lat, lng) {
+      const fLat = Number(lat).toFixed(6);
+      const fLng = Number(lng).toFixed(6);
+      document.getElementById("spotLat").value = fLat;
+      document.getElementById("spotLng").value = fLng;
+      const label = document.getElementById("coordPreviewLabel");
+      if (label) {
+        label.textContent = `📍 ${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+      }
+    }
+
+    function selectSearchResult(name, lat, lng) {
+      const numLat = parseFloat(lat);
+      const numLng = parseFloat(lng);
+      setModalCoordinates(numLat, numLng);
+
+      if (pickerMap && pickerMarker) {
+        pickerMap.flyTo([numLat, numLng], 15, { duration: 0.6 });
+        pickerMarker.setLatLng([numLat, numLng]);
+      }
+
+      const nameInput = document.getElementById("spotName");
+      if (!nameInput.value.trim() || confirm(`要將景點名稱更新為「${name}」嗎？`)) {
+        nameInput.value = name;
+      }
+
+      document.getElementById("searchResultsBox").classList.add("hidden");
+      showToast(`📍 已自動定位：${name}`);
+    }
+
+    async function performPlaceSearch() {
+      const query = document.getElementById("placeSearchInput").value.trim();
+      const resultsBox = document.getElementById("searchResultsBox");
+      const searchBtn = document.getElementById("placeSearchBtn");
+
+      if (!query) {
+        resultsBox.classList.add("hidden");
+        return;
+      }
+
+      const qLower = query.toLowerCase();
+      // 1. First match built-in popular Tokyo landmarks
+      const localMatches = TOKYO_PRESETS.filter(p =>
+        p.name.toLowerCase().includes(qLower) ||
+        p.keywords.toLowerCase().includes(qLower) ||
+        p.address.toLowerCase().includes(qLower)
+      );
+
+      resultsBox.classList.remove("hidden");
+      resultsBox.innerHTML = `<div class="p-2.5 text-slate-500 flex items-center gap-2"><span>⏳</span> 正在查詢「${query}」的地圖位置...</div>`;
+      if (searchBtn) searchBtn.textContent = "查詢中...";
+
+      let apiMatches = [];
+      try {
+        // Query OpenStreetMap Nominatim (prioritize Japan)
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=6&accept-language=zh-TW,ja`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          apiMatches = data.map(item => {
+            const parts = item.display_name.split(",").map(s => s.trim());
+            const shortName = item.name || parts[0] || query;
+            const subAddr = parts.slice(1, 4).join(", ");
+            return {
+              name: shortName,
+              address: subAddr || item.display_name,
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+              source: "map"
+            };
+          });
+        }
+      } catch (err) {
+        console.warn("Nominatim search error:", err);
+      } finally {
+        if (searchBtn) searchBtn.textContent = "搜尋地點";
+      }
+
+      // Combine local matches + API matches (avoid duplicates)
+      const combined = [
+        ...localMatches.map(m => ({ ...m, source: "hot" })),
+        ...apiMatches.filter(a => !localMatches.some(l => Math.abs(l.lat - a.lat) < 0.002 && Math.abs(l.lng - a.lng) < 0.002))
+      ];
+
+      if (combined.length === 0) {
+        resultsBox.innerHTML = `
+          <div class="p-3 text-slate-500 text-center">
+            找不到「${query}」，建議試試更簡短的名稱（例如：淺草寺、新宿、晴空塔），或直接點擊下方小地圖選點。
+          </div>
+        `;
+        return;
+      }
+
+      resultsBox.innerHTML = combined.map((item, i) => `
+        <div class="search-result-item p-2.5 hover:bg-indigo-50 cursor-pointer transition flex items-start justify-between gap-2" data-idx="${i}">
+          <div>
+            <div class="font-bold text-slate-800 flex items-center gap-1.5">
+              <span>📍</span>
+              <span>${item.name}</span>
+              ${item.source === "hot" ? '<span class="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-bold">熱門地標</span>' : ''}
+            </div>
+            <div class="text-[11px] text-slate-500 mt-0.5 pl-5 line-clamp-1">${item.address}</div>
+          </div>
+          <span class="text-[11px] text-indigo-600 font-bold whitespace-nowrap self-center bg-indigo-50 px-2 py-1 rounded">點此選用</span>
+        </div>
+      `).join("");
+
+      resultsBox.querySelectorAll(".search-result-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const item = combined[Number(el.getAttribute("data-idx"))];
+          if (item) {
+            selectSearchResult(item.name, item.lat, item.lng);
+          }
+        });
+      });
+    }
+
+    // Modal Operations
+    function openModalForNew(lat = 35.6895, lng = 139.6917, forceDay = null) {
+      document.getElementById("modalTitle").textContent = "➕ 新增行程景點";
+      document.getElementById("spotId").value = "";
+      document.getElementById("spotName").value = "";
+      document.getElementById("placeSearchInput").value = "";
+      document.getElementById("searchResultsBox").classList.add("hidden");
+      document.getElementById("spotDay").value = forceDay ? String(forceDay) : (currentFilter === "all" ? "1" : currentFilter);
+      document.getElementById("spotTime").value = "";
+      document.getElementById("spotNotes").value = "";
+      document.getElementById("modal").classList.remove("hidden");
+      document.getElementById("modal").classList.add("flex");
+      initOrUpdatePickerMap(lat, lng);
+    }
+
+    function openModalForEdit(id) {
+      const spot = spots.find(s => s.id === id);
+      if (!spot) return;
+      document.getElementById("modalTitle").textContent = "✏️ 編輯行程景點";
+      document.getElementById("spotId").value = spot.id;
+      document.getElementById("spotName").value = spot.name;
+      document.getElementById("placeSearchInput").value = "";
+      document.getElementById("searchResultsBox").classList.add("hidden");
+      document.getElementById("spotDay").value = spot.day;
+      document.getElementById("spotTime").value = spot.time || "";
+      document.getElementById("spotNotes").value = spot.notes || "";
+      document.getElementById("modal").classList.remove("hidden");
+      document.getElementById("modal").classList.add("flex");
+      initOrUpdatePickerMap(spot.lat, spot.lng);
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.add("hidden");
+      document.getElementById("modal").classList.remove("flex");
+    }
+
+    function deleteSpot(id) {
+      const spot = spots.find(s => s.id === id);
+      if (!spot) return;
+      if (!confirm(`確定要刪除「${spot.name}」嗎？這會同步從所有家人的畫面移除。`)) return;
+      spots = spots.filter(s => s.id !== id);
+      saveData(`已刪除「${spot.name}」`);
+      renderAll(false);
+    }
+
+    // Export to CSV for Google My Maps
+    function exportToCsv() {
+      const headers = ["Day", "Name", "Time", "Latitude", "Longitude", "Description"];
+      const rows = spots.map(s => [
+        `D${s.day} (${DAYS_CONFIG[s.day]?.name || ''})`,
+        `"${s.name.replace(/"/g, '""')}"`,
+        `"${(s.time || '').replace(/"/g, '""')}"`,
+        s.lat,
+        s.lng,
+        `"${(s.notes || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "東京7天6夜行程_Google地圖匯入檔.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("已成功匯出 CSV！可直接至 Google My Maps 匯入");
+    }
+
+    // Ensure panels are properly visible in Split Mode (Desktop vs Mobile)
+    function ensureSplitPanelsVisible(preferredMobileTab = null) {
+      const sidebar = document.getElementById("sidebarPanel");
+      const mapPanel = document.getElementById("mapPanel");
+      if (window.innerWidth >= 640) {
+        // 電腦版：左側卡片與右側地圖永遠並排顯示！
+        sidebar.classList.remove("hidden");
+        mapPanel.classList.remove("hidden");
+        mapPanel.classList.add("block");
+        if (map) setTimeout(() => map.invalidateSize(), 100);
+      } else if (preferredMobileTab) {
+        switchMobileTab(preferredMobileTab);
+      }
+    }
+
+    // Switch Main View Mode: 'split' (Map + Cards) or 'table' (Daily Table Overview)
+    function switchViewMode(mode) {
+      currentViewMode = mode;
+      const splitBtn = document.getElementById("viewModeSplitBtn");
+      const tableBtn = document.getElementById("viewModeTableBtn");
+      const sidebar = document.getElementById("sidebarPanel");
+      const mapPanel = document.getElementById("mapPanel");
+      const tablePanel = document.getElementById("tablePanel");
+      const mobileSubTabs = document.getElementById("mobileSubTabs");
+
+      if (mode === "table") {
+        // Activate Table Button style
+        tableBtn.classList.add("bg-indigo-600", "text-white", "shadow-sm");
+        tableBtn.classList.remove("text-slate-600");
+        splitBtn.classList.remove("bg-indigo-600", "text-white", "shadow-sm");
+        splitBtn.classList.add("text-slate-600");
+
+        // Show Table, Hide Map & Sidebar
+        tablePanel.classList.remove("hidden");
+        sidebar.classList.add("hidden");
+        mapPanel.classList.add("hidden");
+        mapPanel.classList.remove("sm:block", "block");
+        if (mobileSubTabs) mobileSubTabs.classList.add("hidden");
+        renderTable();
+      } else {
+        // Activate Split Button style
+        splitBtn.classList.add("bg-indigo-600", "text-white", "shadow-sm");
+        splitBtn.classList.remove("text-slate-600");
+        tableBtn.classList.remove("bg-indigo-600", "text-white", "shadow-sm");
+        tableBtn.classList.add("text-slate-600");
+
+        // Hide Table, Restore Map & Sidebar
+        tablePanel.classList.add("hidden");
+        mapPanel.classList.add("sm:block");
+        if (mobileSubTabs) mobileSubTabs.classList.remove("hidden");
+
+        if (window.innerWidth >= 640) {
+          sidebar.classList.remove("hidden");
+          mapPanel.classList.remove("hidden");
+        } else {
+          switchMobileTab("list");
+        }
+        if (map) setTimeout(() => map.invalidateSize(), 150);
+      }
+    }
+
+    // Mobile tabs switch (Only affects < 640px screens)
+    function switchMobileTab(tab) {
+      const sidebar = document.getElementById("sidebarPanel");
+      const mapPanel = document.getElementById("mapPanel");
+      const tabList = document.getElementById("tabList");
+      const tabMap = document.getElementById("tabMap");
+
+      if (window.innerWidth >= 640) {
+        // 電腦版永遠保持左右並排，不隱藏左側卡片
+        sidebar.classList.remove("hidden");
+        mapPanel.classList.remove("hidden");
+        return;
+      }
+
+      if (tab === "list") {
+        sidebar.classList.remove("hidden");
+        mapPanel.classList.add("hidden");
+        mapPanel.classList.remove("block");
+        tabList.classList.add("bg-white", "text-indigo-600", "shadow");
+        tabList.classList.remove("text-slate-600");
+        tabMap.classList.remove("bg-white", "text-indigo-600", "shadow");
+        tabMap.classList.add("text-slate-600");
+      } else {
+        sidebar.classList.add("hidden");
+        mapPanel.classList.remove("hidden");
+        mapPanel.classList.add("block");
+        tabMap.classList.add("bg-white", "text-indigo-600", "shadow");
+        tabMap.classList.remove("text-slate-600");
+        tabList.classList.remove("bg-white", "text-indigo-600", "shadow");
+        tabList.classList.add("text-slate-600");
+        if (map) setTimeout(() => map.invalidateSize(), 150);
+      }
+    }
+
+    // Initialize application
+    window.addEventListener("DOMContentLoaded", () => {
+      loadData();
+      initMap();
+      renderAll(true);
+
+      // Start Firebase Realtime Database
+      initFirebase();
+
+      // View Mode Switchers
+      document.getElementById("viewModeSplitBtn").addEventListener("click", () => switchViewMode("split"));
+      document.getElementById("viewModeTableBtn").addEventListener("click", () => switchViewMode("table"));
+
+      // UI Listeners
+      document.getElementById("addSpotBtn").addEventListener("click", () => openModalForNew());
+      document.getElementById("tableAddSpotBtn")?.addEventListener("click", () => openModalForNew());
+      document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+      document.getElementById("cancelModalBtn").addEventListener("click", closeModal);
+      document.getElementById("exportCsvBtn").addEventListener("click", exportToCsv);
+
+      // Place Search & Quick Pills inside Modal
+      document.getElementById("placeSearchBtn").addEventListener("click", () => performPlaceSearch());
+      document.getElementById("placeSearchInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          performPlaceSearch();
+        }
+      });
+      document.getElementById("placeSearchInput").addEventListener("input", () => {
+        clearTimeout(searchDebounceTimer);
+        const val = document.getElementById("placeSearchInput").value.trim();
+        if (val.length >= 2) {
+          searchDebounceTimer = setTimeout(() => performPlaceSearch(), 450);
+        } else if (!val) {
+          document.getElementById("searchResultsBox").classList.add("hidden");
+        }
+      });
+      document.querySelectorAll(".quick-spot-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          selectSearchResult(
+            btn.getAttribute("data-name"),
+            btn.getAttribute("data-lat"),
+            btn.getAttribute("data-lng")
+          );
+        });
+      });
+
+      document.getElementById("resetBtn").addEventListener("click", () => {
+        if (confirm("⚠️ 確定要將行程重置為初始預設嗎？所有共同編輯的內容都會被重置！")) {
+          spots = [...INITIAL_SPOTS];
+          saveData("已恢復預設 7 天行程");
+          renderAll(true);
+        }
+      });
+
+      // Form submit
+      document.getElementById("spotForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("spotId").value;
+        const spotData = {
+          day: Number(document.getElementById("spotDay").value),
+          name: document.getElementById("spotName").value.trim(),
+          time: document.getElementById("spotTime").value.trim(),
+          lat: parseFloat(document.getElementById("spotLat").value),
+          lng: parseFloat(document.getElementById("spotLng").value),
+          notes: document.getElementById("spotNotes").value.trim()
+        };
+
+        let msg = "";
+        if (id) {
+          // Edit existing
+          const index = spots.findIndex(s => s.id === id);
+          if (index !== -1) {
+            spots[index] = { ...spots[index], ...spotData };
+            msg = `已更新「${spotData.name}」`;
+          }
+        } else {
+          // Add new
+          const newSpot = {
+            id: "s_" + Date.now(),
+            ...spotData
+          };
+          spots.push(newSpot);
+          msg = `已新增「${spotData.name}」`;
+        }
+
+        saveData(msg);
+        closeModal();
+        renderAll(false);
+      });
+
+      // Mobile Tab Listeners
+      document.getElementById("tabList").addEventListener("click", () => switchMobileTab("list"));
+      document.getElementById("tabMap").addEventListener("click", () => switchMobileTab("map"));
+      document.getElementById("mobileBackToListBtn")?.addEventListener("click", () => switchMobileTab("list"));
+
+      // Keep layout responsive when resizing window
+      window.addEventListener("resize", () => {
+        if (currentViewMode === "split" && window.innerWidth >= 640) {
+          ensureSplitPanelsVisible();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
