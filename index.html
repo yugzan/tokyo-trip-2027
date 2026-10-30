@@ -27,19 +27,32 @@
     .leaflet-popup-content-wrapper { border-radius: 12px; }
     .sortable-ghost { opacity: 0.35; background-color: #EEF2FF !important; border: 2px dashed #6366F1 !important; }
     .sortable-drag { cursor: grabbing !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15) !important; }
-    .drag-handle { cursor: grab; touch-action: none; }
-    .drag-handle:active { cursor: grabbing; }
+    .spot-card, .kanban-card, .table-spot-row { cursor: grab; }
+    .spot-card:active, .kanban-card:active, .table-spot-row:active { cursor: grabbing; }
+    .route-badge-icon { background: transparent; border: none; }
+    @keyframes pulseRoute {
+      0%, 100% { stroke-opacity: 0.95; }
+      50% { stroke-opacity: 0.55; }
+    }
+    .active-route-glow { animation: pulseRoute 1.8s infinite ease-in-out; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
 
   <!-- Header -->
-  <header class="bg-indigo-600 text-white shadow-md z-20 px-4 py-3 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-    <div class="flex items-center gap-2">
+  <header class="bg-indigo-600 text-white shadow-md z-20 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+    <div class="flex items-center gap-2.5 flex-wrap">
       <span class="text-2xl">🗼</span>
       <div>
-        <h1 class="text-lg font-bold leading-tight">東京 7 天 6 夜 親子自由行地圖</h1>
-        <p class="text-xs text-indigo-100 hidden sm:block">視覺化每日路線 • 即時編輯地點 • 一鍵匯出 Google 地圖</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-base sm:text-lg font-bold leading-tight">東京 7 天 6 夜 親子自由行地圖</h1>
+          <!-- Editable Start Date Badge -->
+          <label class="inline-flex items-center gap-1 bg-indigo-700/90 hover:bg-indigo-800 border border-indigo-400/40 px-2.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition shadow-sm" title="點擊可隨時修改出發日期，D1~D7 日期與星期會自動重算">
+            <span>📅 出發日：</span>
+            <input type="date" id="startDateInput" value="2027-03-17" class="bg-transparent text-amber-300 font-bold focus:outline-none cursor-pointer text-xs w-[110px]">
+          </label>
+        </div>
+        <p class="text-xs text-indigo-100 hidden sm:block mt-0.5">真實道路路線預覽 • 整張卡片與表格皆可直接拖曳排序</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -74,7 +87,7 @@
 
     <!-- Day Filter Pills -->
     <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 flex-1 min-w-0">
-      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap ml-1">篩選：</span>
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap ml-1">天數：</span>
       <div id="dayFilters" class="flex gap-1.5">
         <!-- Generated via JS -->
       </div>
@@ -94,7 +107,7 @@
     <aside id="sidebarPanel" class="w-full sm:w-96 md:w-[430px] bg-white border-r border-slate-200 flex flex-col z-10 overflow-hidden flex-shrink-0">
       <div class="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
         <span id="spotCountLabel" class="font-semibold text-slate-700">顯示 0 個地點</span>
-        <span class="text-indigo-600 font-medium">⠿ 按住左側可拖曳排序 • 點擊定位</span>
+        <span class="text-indigo-600 font-medium">💡 整張卡片可拖曳排序 • 點一下定位路線</span>
       </div>
       <div id="itineraryList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
         <!-- Rendered by JS -->
@@ -110,9 +123,9 @@
       </button>
       <!-- Map Legend / Helper -->
       <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur shadow-lg border border-slate-200 rounded-xl p-3 z-[1000] text-xs space-y-1.5 hidden md:block">
-        <div class="font-bold text-slate-800 flex items-center gap-1">🗺️ 路線圖例與操作提示</div>
-        <div class="text-slate-600">• <b>拖曳排序</b>：拉動卡片或表格列，地圖路線即時重繪</div>
-        <div class="text-slate-600">• <b>Google 導航</b>：自動帶入上一站與本站座標開啟導航</div>
+        <div class="font-bold text-slate-800 flex items-center gap-1">🗺️ 地圖真實路線與操作說明</div>
+        <div class="text-slate-600">• <b>道路導航軌跡</b>：地圖直接顯示沿道路彎曲的路線與各段車程</div>
+        <div class="text-slate-600">• <b>點擊卡片定位</b>：自動高亮「上一站 ➔ 本站」專屬路線段</div>
         <div class="text-slate-600">• <b>點擊地圖任意處</b>：可直接在該處新增景點</div>
       </div>
     </section>
@@ -126,9 +139,9 @@
           <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span>🗓️</span> 7 天每日行程快速總覽（支援同日與跨日拖曳排序）
+                <span>🗓️</span> 7 天每日行程快速總覽（整張小卡可直接同日或跨日拖曳）
               </h2>
-              <p class="text-xs text-slate-500 mt-0.5">可直接按住項目上下拖曳調整順序，或直接拖到其他天數</p>
+              <p class="text-xs text-slate-500 mt-0.5">直接按住任一景點小卡即可上下調整順序或拖到其他天數；點一下可切回地圖看路線</p>
             </div>
             <button id="tableAddSpotBtn" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 shadow-sm transition">
               <span>➕</span> 新增行程點
@@ -144,7 +157,7 @@
           <div class="px-4 sm:px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/60">
             <div>
               <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span>📋</span> 每日行程詳細表格（按住左側 ⠿ 可上下拖曳排序）
+                <span>📋</span> 每日行程詳細表格（整列皆可直接按住上下拖曳排序）
               </h2>
               <p class="text-xs text-slate-500 mt-0.5" id="tableCountSubtitle">顯示全部行程明細</p>
             </div>
@@ -273,16 +286,50 @@
   </div>
 
   <script>
-    // Day Configuration with distinct colors
+    // Day Configuration with distinct colors & dynamic date calculation
+    let tripStartDate = "2027-03-17";
+    const WEEKDAY_NAMES = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+
     const DAYS_CONFIG = {
-      1: { name: "D1 週三", label: "抵達 & 晴空塔", color: "#3B82F6", stroke: "#2563EB" },
-      2: { name: "D2 週四", label: "迪士尼海洋", color: "#EC4899", stroke: "#DB2777" },
-      3: { name: "D3 週五", label: "橫濱親子遊", color: "#10B981", stroke: "#059669" },
-      4: { name: "D4 週六", label: "樂園二選一", color: "#F59E0B", stroke: "#D97706" },
-      5: { name: "D5 週日", label: "河口湖自駕", color: "#8B5CF6", stroke: "#7C3AED" },
-      6: { name: "D6 週一", label: "河口湖 & 採買", color: "#06B6D4", stroke: "#0891B2" },
-      7: { name: "D7 週二", label: "上野採買 & 返台", color: "#64748B", stroke: "#475569" }
+      1: { name: "D1 週三", dateStr: "03/17", fullName: "D1 週三 03/17", label: "抵達 & 晴空塔", color: "#3B82F6", stroke: "#2563EB" },
+      2: { name: "D2 週四", dateStr: "03/18", fullName: "D2 週四 03/18", label: "迪士尼海洋", color: "#EC4899", stroke: "#DB2777" },
+      3: { name: "D3 週五", dateStr: "03/19", fullName: "D3 週五 03/19", label: "橫濱親子遊", color: "#10B981", stroke: "#059669" },
+      4: { name: "D4 週六", dateStr: "03/20", fullName: "D4 週六 03/20", label: "樂園二選一", color: "#F59E0B", stroke: "#D97706" },
+      5: { name: "D5 週日", dateStr: "03/21", fullName: "D5 週日 03/21", label: "河口湖自駕", color: "#8B5CF6", stroke: "#7C3AED" },
+      6: { name: "D6 週一", dateStr: "03/22", fullName: "D6 週一 03/22", label: "御殿場還車 & 採買", color: "#06B6D4", stroke: "#0891B2" },
+      7: { name: "D7 週二", dateStr: "03/23", fullName: "D7 週二 03/23", label: "上野採買 & 返台", color: "#64748B", stroke: "#475569" }
     };
+
+    function refreshDaysConfigFromDate(startDateStr) {
+      if (startDateStr && /^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) {
+        tripStartDate = startDateStr;
+      }
+      const [y, m, d] = tripStartDate.split("-").map(Number);
+      const baseDate = new Date(y, m - 1, d);
+      for (let i = 1; i <= 7; i++) {
+        const cur = new Date(baseDate);
+        cur.setDate(baseDate.getDate() + (i - 1));
+        const mm = String(cur.getMonth() + 1).padStart(2, "0");
+        const dd = String(cur.getDate()).padStart(2, "0");
+        const wk = WEEKDAY_NAMES[cur.getDay()];
+        DAYS_CONFIG[i].name = `D${i} ${wk}`;
+        DAYS_CONFIG[i].dateStr = `${mm}/${dd}`;
+        DAYS_CONFIG[i].fullName = `D${i} ${wk} ${mm}/${dd}`;
+      }
+      const dateInput = document.getElementById("startDateInput");
+      if (dateInput && dateInput.value !== tripStartDate) {
+        dateInput.value = tripStartDate;
+      }
+      const selectEl = document.getElementById("spotDay");
+      if (selectEl) {
+        Array.from(selectEl.options).forEach(opt => {
+          const dayNum = Number(opt.value);
+          if (DAYS_CONFIG[dayNum]) {
+            opt.textContent = `${DAYS_CONFIG[dayNum].fullName} (${DAYS_CONFIG[dayNum].label})`;
+          }
+        });
+      }
+    }
 
     // Pre-loaded initial Tokyo itinerary data
     const INITIAL_SPOTS = [
@@ -302,17 +349,42 @@
       { id: "s11", day: 4, name: "續住上野飯店 (不換房)", time: "傍晚返回", lat: 35.714167, lng: 139.777400, notes: "免搬家，養精蓄銳準備隔天河口湖" },
 
       { id: "s12", day: 5, name: "新宿車站 (搭乘富士回遊)", time: "08:30", lat: 35.689600, lng: 139.700600, notes: "上野搭山手線到新宿，搭直達特急免換車" },
-      { id: "s13", day: 5, name: "河口湖站租車取車", time: "10:30", lat: 35.498200, lng: 138.768800, notes: "抵達河口湖站租車自駕，避開市區塞車" },
+      { id: "s13", day: 5, name: "Toyota Rent a Car 河口湖店 (取車)", time: "10:30", lat: 35.497500, lng: 138.763600, notes: "Toyota 租車河口湖店取車自駕（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/", transit: "河口湖站出站->步行或接駁至 Toyota 富士河口湖店取車" },
       { id: "s14", day: 5, name: "河口湖天上山纜車 & 遊覽船", time: "11:30~14:00", lat: 35.503600, lng: 138.772500, notes: "眺望富士山美景，人潮多需預留排隊時間" },
       { id: "s15", day: 5, name: "富士 SUBARU 樂園", time: "14:30~17:00", lat: 35.441800, lng: 138.752300, notes: "森林探索戶外園區，大人小孩狗狗都適合" },
       { id: "s16", day: 5, name: "河口湖溫泉旅館 (住宿)", time: "傍晚入住", lat: 35.508500, lng: 138.765000, notes: "一泊二食享受富士山景色" },
 
-      { id: "s17", day: 6, name: "河口湖還車 & 搭車回東京", time: "11:30~13:30", lat: 35.498200, lng: 138.768800, notes: "中午搭乘直達電車/巴士返回東京市區" },
-      { id: "s18", day: 6, name: "上野市區最後採買", time: "15:00~20:00", lat: 35.711500, lng: 139.774700, notes: "入住上野，集中在阿美橫町、多慶屋採購" },
+      { id: "s17", day: 6, name: "Toyota Rent a Car 御殿場還車 & 回東京", time: "11:30~14:00", lat: 35.299500, lng: 138.935500, notes: "從河口湖自駕至御殿場站前店甲租乙還（可順遊御殿場 Outlet），再搭車返回東京", transit: "河口湖自駕->東富士五湖道路->Toyota 御殿場駅前店還車->搭高速巴士或JR回東京/上野" },
+      { id: "s18", day: 6, name: "上野市區最後採買", time: "15:30~20:00", lat: 35.711500, lng: 139.774700, notes: "入住上野，集中在阿美橫町、多慶屋採購" },
 
       { id: "s19", day: 7, name: "阿美橫町晨間最後補貨", time: "10:00~11:30", lat: 35.711500, lng: 139.774700, notes: "藥妝與零食最後打包" },
       { id: "s20", day: 7, name: "出發成田機場 (15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "搭乘 Skyliner 直達成田，13:10前抵達櫃檯" }
     ];
+
+    // Auto-upgrade legacy default rental spots (s13 & s17) if unchanged by user
+    function upgradeLegacyRentalSpots(list) {
+      let changed = false;
+      list.forEach(item => {
+        if (item.id === "s13" && item.name === "河口湖站租車取車") {
+          item.name = "Toyota Rent a Car 河口湖店 (取車)";
+          item.lat = 35.497500;
+          item.lng = 138.763600;
+          item.notes = "Toyota 租車河口湖店取車自駕（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/";
+          item.transit = "河口湖站出站->步行或接駁至 Toyota 富士河口湖店取車";
+          changed = true;
+        }
+        if (item.id === "s17" && item.name === "河口湖還車 & 搭車回東京") {
+          item.name = "Toyota Rent a Car 御殿場還車 & 回東京";
+          item.time = "11:30~14:00";
+          item.lat = 35.299500;
+          item.lng = 138.935500;
+          item.notes = "從河口湖自駕至御殿場站前店甲租乙還（可順遊御殿場 Outlet），再搭車返回東京";
+          item.transit = "河口湖自駕->東富士五湖道路->Toyota 御殿場駅前店還車->搭高速巴士或JR回東京/上野";
+          changed = true;
+        }
+      });
+      return changed;
+    }
 
     // State
     let spots = [];
@@ -322,9 +394,11 @@
     let map = null;
     let markersLayer = null;
     let polylinesLayer = null;
+    let highlightRouteLayer = null;
     let markerMap = {}; // id -> L.marker
     let db = null;
     let spotsRef = null;
+    let startDateRef = null;
     let isInitialLoad = true;
 
     // Auto Cloud Sync (Direct connection to asia-southeast1 Realtime Database — no API key needed)
@@ -332,6 +406,7 @@
     const DEFAULT_DB_URL = "https://tokyo-trip-2027-fc2d6-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     function renderAll(fitMapBounds = true) {
+      refreshDaysConfigFromDate(tripStartDate);
       renderFilters();
       renderItinerary();
       renderMap(fitMapBounds);
@@ -349,13 +424,29 @@
           }
           db = firebase.database();
           spotsRef = db.ref("tokyo_trip/spots");
+          startDateRef = db.ref("tokyo_trip/startDate");
+
+          startDateRef.on("value", (snap) => {
+            const val = snap.val();
+            if (val && typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+              tripStartDate = val;
+              try { localStorage.setItem("tokyo_trip_start_date", tripStartDate); } catch(e){}
+              renderAll(false);
+            } else {
+              startDateRef.set(tripStartDate);
+            }
+          });
 
           spotsRef.on("value", (snapshot) => {
             const data = snapshot.val();
             updateSyncStatus("online", "雲端即時同步");
             if (data && Array.isArray(data) && data.length > 0) {
               spots = data;
+              const upgraded = upgradeLegacyRentalSpots(spots);
               try { localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots)); } catch(e){}
+              if (upgraded) {
+                spotsRef.set(spots);
+              }
               renderAll(isInitialLoad);
               if (!isInitialLoad) {
                 showToast("已同步最新行程變更");
@@ -394,15 +485,33 @@
     // Load data from localStorage or default
     function loadData() {
       try {
+        const savedDate = localStorage.getItem("tokyo_trip_start_date");
+        if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) {
+          tripStartDate = savedDate;
+        }
+        refreshDaysConfigFromDate(tripStartDate);
+
         const saved = localStorage.getItem("tokyo_trip_spots");
         if (saved) {
           spots = JSON.parse(saved);
+          upgradeLegacyRentalSpots(spots);
         } else {
           spots = [...INITIAL_SPOTS];
         }
       } catch (e) {
         spots = [...INITIAL_SPOTS];
       }
+    }
+
+    function saveStartDate(newDateStr) {
+      if (!newDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(newDateStr)) return;
+      tripStartDate = newDateStr;
+      try { localStorage.setItem("tokyo_trip_start_date", tripStartDate); } catch(e){}
+      if (startDateRef) {
+        startDateRef.set(tripStartDate);
+      }
+      renderAll(false);
+      showToast(`📅 出發日已更新為 ${tripStartDate}（D1~D7 日期已自動推算）`);
     }
 
     function saveData(actionMsg) {
@@ -445,8 +554,9 @@
         attribution: "© OpenStreetMap contributors"
       }).addTo(map);
 
-      markersLayer = L.layerGroup().addTo(map);
       polylinesLayer = L.layerGroup().addTo(map);
+      highlightRouteLayer = L.layerGroup().addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
 
       // Click map to add spot
       map.on("click", (e) => {
@@ -454,12 +564,13 @@
       });
     }
 
-    // Render Filters
+    // Render Filters (Two-line pill showing "D1 週三" and "03/17" below)
     function renderFilters() {
       const container = document.getElementById("dayFilters");
       let html = `
-        <button data-day="all" class="filter-btn px-3 py-1 text-xs font-bold rounded-full transition whitespace-nowrap ${currentFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-          全部天數 (${spots.length})
+        <button data-day="all" class="filter-btn px-3 py-1.5 text-xs font-bold rounded-xl transition whitespace-nowrap flex flex-col items-center justify-center leading-tight ${currentFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+          <span>全部天數</span>
+          <span class="text-[10px] opacity-80 font-medium mt-0.5">共 ${spots.length} 站</span>
         </button>
       `;
 
@@ -468,10 +579,13 @@
         const isCurrent = currentFilter === String(d);
         const count = spots.filter(s => s.day === d).length;
         html += `
-          <button data-day="${d}" class="filter-btn flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full transition whitespace-nowrap ${isCurrent ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" style="${isCurrent ? 'background-color:' + cfg.stroke : ''}">
-            <span class="w-2.5 h-2.5 rounded-full inline-block border border-white/60" style="background-color: ${cfg.color}"></span>
-            <span>${cfg.name}</span>
-            <span class="opacity-80 text-[10px]">(${count})</span>
+          <button data-day="${d}" class="filter-btn px-3 py-1 text-xs font-bold rounded-xl transition whitespace-nowrap flex flex-col items-center justify-center leading-tight ${isCurrent ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" style="${isCurrent ? 'background-color:' + cfg.stroke : ''}">
+            <div class="flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full inline-block border border-white/60" style="background-color: ${cfg.color}"></span>
+              <span>${cfg.name}</span>
+              <span class="opacity-75 text-[10px]">(${count})</span>
+            </div>
+            <div class="text-[11px] font-semibold mt-0.5 ${isCurrent ? 'text-amber-200' : 'text-slate-500'}">${cfg.dateStr}</div>
           </button>
         `;
       }
@@ -491,7 +605,7 @@
       });
     }
 
-    // Focus a specific spot on the map and open its popup
+    // Focus a specific spot on the map, highlight its incoming route, and open its popup
     function focusSpotOnMap(spotId) {
       const spot = spots.find(s => s.id === spotId);
       if (!spot || !map) return;
@@ -511,13 +625,24 @@
       }
 
       renderItinerary();
+      renderActiveRouteHighlight(spot);
 
       setTimeout(() => {
         map.invalidateSize();
-        map.flyTo([spot.lat, spot.lng], 15, { duration: 0.8 });
+        const nav = getSpotNavigation(spot);
+        if (nav.hasRoute && nav.prevSpot) {
+          // 同時呈現「上一站 ➔ 本站」的完整路線視野
+          const segBounds = L.latLngBounds(
+            [nav.prevSpot.lat, nav.prevSpot.lng],
+            [spot.lat, spot.lng]
+          );
+          map.flyToBounds(segBounds, { padding: [70, 70], maxZoom: 15, duration: 0.8 });
+        } else {
+          map.flyTo([spot.lat, spot.lng], 15, { duration: 0.8 });
+        }
         const marker = markerMap[spot.id];
         if (marker) {
-          setTimeout(() => marker.openPopup(), 350);
+          setTimeout(() => marker.openPopup(), 400);
         }
       }, 100);
     }
@@ -552,10 +677,12 @@
 
       const sameLocation = prevSpot && Math.abs(prevSpot.lat - spot.lat) < 0.0005 && Math.abs(prevSpot.lng - spot.lng) < 0.0005;
       if (prevSpot && !sameLocation) {
-        const mode = (spot.day === 5 && idx > 0) ? "driving" : "transit";
+        const isCarDay = (spot.day === 5 && idx > 0) || (spot.day === 6 && idx === 0);
+        const mode = isCarDay ? "driving" : "transit";
         const url = `https://www.google.com/maps/dir/?api=1&origin=${prevSpot.lat},${prevSpot.lng}&destination=${spot.lat},${spot.lng}&travelmode=${mode}`;
         return {
           hasRoute: true,
+          prevSpot,
           fromName: shortenPlaceName(prevSpot.name),
           modeIcon: mode === "driving" ? "🚗" : "🚇",
           url
@@ -564,10 +691,96 @@
 
       return {
         hasRoute: false,
+        prevSpot: null,
         fromName: "",
         modeIcon: "🗺️",
         url: `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
       };
+    }
+
+    // Real Road Geometry Cache (OSRM public routing engine)
+    const routeGeometryCache = {};
+    try {
+      const savedCache = localStorage.getItem("tokyo_trip_route_cache_v1");
+      if (savedCache) Object.assign(routeGeometryCache, JSON.parse(savedCache));
+    } catch (e) {}
+
+    function getRouteCacheKey(lat1, lng1, lat2, lng2) {
+      return `${Number(lat1).toFixed(4)},${Number(lng1).toFixed(4)}_${Number(lat2).toFixed(4)},${Number(lng2).toFixed(4)}`;
+    }
+
+    // Haversine fallback distance in km
+    function calcDirectDistanceKm(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    async function fetchRoadSegmentGeometry(fromSpot, toSpot) {
+      const key = getRouteCacheKey(fromSpot.lat, fromSpot.lng, toSpot.lat, toSpot.lng);
+      if (routeGeometryCache[key]) return routeGeometryCache[key];
+
+      const directKm = calcDirectDistanceKm(fromSpot.lat, fromSpot.lng, toSpot.lat, toSpot.lng);
+      const fallback = {
+        coords: [[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]],
+        distanceKm: (directKm * 1.25).toFixed(1),
+        durationMin: Math.max(5, Math.round(directKm * 2.2))
+      };
+
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${fromSpot.lng},${fromSpot.lat};${toSpot.lng},${toSpot.lat}?overview=simplified&geometries=geojson`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.routes && data.routes[0] && data.routes[0].geometry) {
+            const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const distKm = (data.routes[0].distance / 1000).toFixed(1);
+            const durMin = Math.max(3, Math.round(data.routes[0].duration / 60));
+            const result = { coords, distanceKm: distKm, durationMin: durMin };
+            routeGeometryCache[key] = result;
+            try { localStorage.setItem("tokyo_trip_route_cache_v1", JSON.stringify(routeGeometryCache)); } catch (e) {}
+            return result;
+          }
+        }
+      } catch (e) {}
+      return fallback;
+    }
+
+    async function renderActiveRouteHighlight(spot) {
+      if (!highlightRouteLayer) return;
+      highlightRouteLayer.clearLayers();
+      if (!spot) return;
+
+      const nav = getSpotNavigation(spot);
+      if (!nav.hasRoute || !nav.prevSpot) return;
+
+      const seg = await fetchRoadSegmentGeometry(nav.prevSpot, spot);
+      if (!seg || !seg.coords || seg.coords.length < 2) return;
+
+      // Outer bright amber/yellow highlight glow
+      L.polyline(seg.coords, {
+        color: "#FBBF24",
+        weight: 12,
+        opacity: 0.85,
+        lineCap: "round",
+        lineJoin: "round",
+        className: "active-route-glow"
+      }).addTo(highlightRouteLayer);
+
+      // Inner crisp navigation line
+      const activeLine = L.polyline(seg.coords, {
+        color: "#1E1B4B",
+        weight: 4,
+        dashArray: "8, 8",
+        opacity: 0.95
+      }).addTo(highlightRouteLayer);
+
+      activeLine.bindTooltip(`🎯 當前導航段：${nav.fromName} ➔ ${shortenPlaceName(spot.name)} (${seg.distanceKm} km)`, {
+        sticky: true,
+        className: "font-bold text-xs"
+      });
     }
 
     // Helper: Smart parse notes, URLs, and collapsible transit steps (Method A + URL button)
@@ -676,31 +889,30 @@
       filtered.forEach((spot) => {
         dayCounters[spot.day] = (dayCounters[spot.day] || 0) + 1;
         const seqNum = dayCounters[spot.day];
-        const cfg = DAYS_CONFIG[spot.day] || { name: `D${spot.day}`, label: "", color: "#64748B", stroke: "#475569" };
+        const cfg = DAYS_CONFIG[spot.day] || { name: `D${spot.day}`, dateStr: "", fullName: `D${spot.day}`, label: "", color: "#64748B", stroke: "#475569" };
         const isActive = activeSpotId === spot.id;
         const nav = getSpotNavigation(spot);
         const details = parseSpotDetails(spot);
 
         html += `
-          <div class="spot-card rounded-xl p-3.5 border transition cursor-pointer ${isActive ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/30 shadow-md' : 'bg-white border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md'}" data-id="${spot.id}">
+          <div class="spot-card rounded-xl p-3.5 border transition select-none ${isActive ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/30 shadow-md' : 'bg-white border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md'}" data-id="${spot.id}">
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2">
-                <!-- Drag Handle -->
-                <span class="drag-handle text-slate-300 hover:text-slate-600 px-1 py-1 text-base select-none" title="按住上下拖曳排序">⠿</span>
+                <span class="text-slate-300 text-sm select-none" title="整張卡片皆可按住拖曳排序">⠿</span>
                 <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0 shadow-sm" style="background-color: ${cfg.stroke}">
                   ${seqNum}
                 </span>
                 <div>
                   <h4 class="font-bold text-slate-800 text-sm hover:text-indigo-600 transition leading-snug">${spot.name}</h4>
                   <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-1">
-                    <span class="px-2 py-0.5 rounded-md font-bold text-[11px] text-white" style="background-color: ${cfg.stroke}">${cfg.name}</span>
+                    <span class="px-2 py-0.5 rounded-md font-bold text-[11px] text-white" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr}</span>
                     <span class="font-medium text-slate-600">🕒 ${spot.time || '彈性時間'}</span>
                   </div>
                 </div>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">
-                <button class="locate-btn px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition" data-id="${spot.id}" title="在地圖上定位">
-                  📍定位
+                <button class="locate-btn px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition" data-id="${spot.id}" title="在地圖上定位並高亮路線">
+                  📍路線
                 </button>
                 <button class="edit-btn p-1 text-slate-400 hover:text-indigo-600 rounded" data-id="${spot.id}" title="編輯">
                   ✏️
@@ -750,12 +962,15 @@
 
       container.innerHTML = html;
 
-      // Enable Drag & Drop on Card List
+      // Enable Drag & Drop on Entire Card (Not restricted to handle; clicks still work smoothly)
       if (typeof Sortable !== "undefined") {
         if (sortableListInstance) sortableListInstance.destroy();
         sortableListInstance = Sortable.create(container, {
           animation: 180,
-          handle: ".drag-handle",
+          filter: "button, a, input, .nav-link-btn, .toggle-transit-btn, .transit-detail-box",
+          preventOnFilter: false,
+          delay: 120,
+          delayOnTouchOnly: true,
           ghostClass: "sortable-ghost",
           dragClass: "sortable-drag",
           onEnd: () => {
@@ -773,8 +988,7 @@
             e.target.closest(".delete-btn") ||
             e.target.closest(".nav-link-btn") ||
             e.target.closest(".toggle-transit-btn") ||
-            e.target.closest(".transit-detail-box") ||
-            e.target.closest(".drag-handle")
+            e.target.closest(".transit-detail-box")
           ) return;
           const id = card.getAttribute("data-id");
           focusSpotOnMap(id);
@@ -815,11 +1029,14 @@
       });
     }
 
-    // Render Markers & Solid High-Contrast Route Lines on Leaflet
+    // Render Markers & Real Road Route Lines on Leaflet
+    let mapRenderToken = 0;
     function renderMap(shouldFitBounds = true) {
       if (!map) return;
+      const currentToken = ++mapRenderToken;
       markersLayer.clearLayers();
       polylinesLayer.clearLayers();
+      if (highlightRouteLayer) highlightRouteLayer.clearLayers();
       markerMap = {};
 
       const daysToRender = currentFilter === "all" ? [1,2,3,4,5,6,7] : [Number(currentFilter)];
@@ -830,11 +1047,9 @@
         if (daySpots.length === 0) return;
 
         const cfg = DAYS_CONFIG[d];
-        const lineCoords = [];
 
         daySpots.forEach((spot, idx) => {
           const latlng = [spot.lat, spot.lng];
-          lineCoords.push(latlng);
           bounds.push(latlng);
 
           // Marker icon (Larger, clearer with solid border)
@@ -853,7 +1068,7 @@
 
           const popupContent = `
             <div class="p-1 min-w-[220px]">
-              <div class="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white inline-block mb-1" style="background-color: ${cfg.stroke}">${cfg.name} • 第 ${idx + 1} 站</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white inline-block mb-1" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr} • 第 ${idx + 1} 站</div>
               <div class="font-bold text-sm text-slate-800 mt-0.5">${spot.name}</div>
               <div class="text-xs text-slate-600 font-medium mt-1">🕒 ${spot.time || '整天 / 彈性'}</div>
               ${details.cleanNotes ? `<div class="text-xs text-slate-700 mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 leading-relaxed">${details.cleanNotes}</div>` : ''}
@@ -874,6 +1089,7 @@
 
           marker.on("popupopen", (e) => {
             activeSpotId = spot.id;
+            renderActiveRouteHighlight(spot);
             const el = e.popup.getElement();
             el.querySelector(".popup-edit")?.addEventListener("click", () => {
               openModalForEdit(spot.id);
@@ -884,32 +1100,75 @@
           });
         });
 
-        // Draw high-contrast SOLID line (White halo + Solid colored core)
-        if (lineCoords.length > 1) {
-          // 1. White outer casing for high contrast against map roads
-          L.polyline(lineCoords, {
-            color: "#FFFFFF",
-            weight: 9,
-            opacity: 0.9,
-            lineCap: "round",
-            lineJoin: "round"
-          }).addTo(polylinesLayer);
+        // Draw real road route segment-by-segment for this day
+        if (daySpots.length > 1) {
+          for (let i = 0; i < daySpots.length - 1; i++) {
+            const fromSpot = daySpots[i];
+            const toSpot = daySpots[i + 1];
+            const samePos = Math.abs(fromSpot.lat - toSpot.lat) < 0.0005 && Math.abs(fromSpot.lng - toSpot.lng) < 0.0005;
+            if (samePos) continue;
 
-          // 2. Bold solid colored route line
-          const routeLine = L.polyline(lineCoords, {
-            color: cfg.stroke,
-            weight: 5,
-            opacity: 0.95,
-            lineCap: "round",
-            lineJoin: "round"
-          }).addTo(polylinesLayer);
+            // Draw immediate straight line first, then upgrade to real road geometry
+            const whiteHalo = L.polyline([[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]], {
+              color: "#FFFFFF",
+              weight: 8,
+              opacity: 0.9,
+              lineCap: "round",
+              lineJoin: "round"
+            }).addTo(polylinesLayer);
 
-          routeLine.bindTooltip(`${cfg.name} (${cfg.label}) 順遊路線`, {
-            sticky: true,
-            className: "font-bold text-xs"
-          });
+            const colorLine = L.polyline([[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]], {
+              color: cfg.stroke,
+              weight: 4.5,
+              opacity: 0.92,
+              lineCap: "round",
+              lineJoin: "round"
+            }).addTo(polylinesLayer);
+
+            const navInfo = getSpotNavigation(toSpot);
+
+            fetchRoadSegmentGeometry(fromSpot, toSpot).then(seg => {
+              if (currentToken !== mapRenderToken) return;
+              if (seg && seg.coords && seg.coords.length > 1) {
+                whiteHalo.setLatLngs(seg.coords);
+                colorLine.setLatLngs(seg.coords);
+
+                colorLine.bindTooltip(
+                  `${cfg.name} (${cfg.dateStr})：#${i + 1} ${shortenPlaceName(fromSpot.name)} ➔ #${i + 2} ${shortenPlaceName(toSpot.name)}（約 ${seg.distanceKm} km）`,
+                  { sticky: true, className: "font-bold text-xs" }
+                );
+
+                // When filtering a specific day (or if segment is long enough), show midpoint route distance pill on map
+                if (currentFilter !== "all" && seg.coords.length >= 2) {
+                  const midIdx = Math.floor(seg.coords.length / 2);
+                  const midLatLng = seg.coords[midIdx];
+                  const badgeHtml = `
+                    <a href="${navInfo.url}" target="_blank" rel="noopener noreferrer"
+                       title="點擊開啟 Google Maps 導航"
+                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-800 border-2 shadow-md whitespace-nowrap hover:scale-105 transition"
+                       style="border-color: ${cfg.stroke}">
+                      <span>${navInfo.modeIcon}</span>
+                      <span>${seg.distanceKm}km</span>
+                    </a>
+                  `;
+                  const badgeIcon = L.divIcon({
+                    className: "route-badge-icon",
+                    html: badgeHtml,
+                    iconSize: [68, 22],
+                    iconAnchor: [34, 11]
+                  });
+                  L.marker(midLatLng, { icon: badgeIcon, interactive: true }).addTo(polylinesLayer);
+                }
+              }
+            });
+          }
         }
       });
+
+      if (activeSpotId) {
+        const activeSpot = spots.find(s => s.id === activeSpotId);
+        if (activeSpot) renderActiveRouteHighlight(activeSpot);
+      }
 
       if (shouldFitBounds && bounds.length > 0) {
         map.fitBounds(bounds, { padding: [45, 45], maxZoom: 14 });
@@ -933,7 +1192,10 @@
         gridHtml += `
           <div class="rounded-xl border ${isDimmed ? 'opacity-45 border-slate-200 bg-slate-50' : 'border-slate-200 bg-white shadow-sm'} flex flex-col overflow-hidden transition">
             <div class="px-3 py-2 text-white font-bold text-xs flex items-center justify-between" style="background-color: ${cfg.stroke}">
-              <span>${cfg.name}</span>
+              <div>
+                <div>${cfg.name}</div>
+                <div class="text-[11px] text-amber-200 font-semibold">${cfg.dateStr}</div>
+              </div>
               <span class="text-[11px] bg-black/20 px-1.5 py-0.5 rounded">${daySpots.length} 站</span>
             </div>
             <div class="px-3 py-1.5 bg-slate-100 border-b border-slate-200 text-[11px] font-semibold text-slate-600 truncate">
@@ -941,10 +1203,10 @@
             </div>
             <div class="kanban-day-list p-2.5 flex-1 space-y-2 min-h-[60px]" data-day="${d}">
               ${daySpots.map((s, i) => `
-                <div class="kanban-card group p-2 rounded-lg bg-slate-50 hover:bg-indigo-50/80 border border-slate-200/80 hover:border-indigo-300 transition cursor-pointer text-xs" data-id="${s.id}" data-locate-id="${s.id}">
+                <div class="kanban-card group p-2 rounded-lg bg-slate-50 hover:bg-indigo-50/80 border border-slate-200/80 hover:border-indigo-300 transition select-none text-xs" data-id="${s.id}" data-locate-id="${s.id}">
                   <div class="flex items-center justify-between gap-1 text-[10px] text-slate-500 font-semibold">
                     <span class="flex items-center gap-1">
-                      <span class="drag-handle text-slate-300 hover:text-slate-600 text-xs select-none" title="按住拖曳排序或跨日移動">⠿</span>
+                      <span class="text-slate-300 text-xs select-none">⠿</span>
                       <span>#${i + 1} ${s.time || '彈性'}</span>
                     </span>
                     <button class="table-edit-btn text-indigo-600 opacity-80 hover:opacity-100 hover:underline" data-id="${s.id}" title="編輯">編輯</button>
@@ -963,7 +1225,7 @@
       }
       gridContainer.innerHTML = gridHtml;
 
-      // Initialize Sortable on 7-Day Kanban Matrix
+      // Initialize Sortable on 7-Day Kanban Matrix (Entire card draggable)
       if (sortableKanbanInstances.length > 0) {
         sortableKanbanInstances.forEach(inst => inst.destroy());
         sortableKanbanInstances = [];
@@ -973,6 +1235,10 @@
           const inst = Sortable.create(colEl, {
             group: "kanban-days",
             animation: 180,
+            filter: "button, a",
+            preventOnFilter: false,
+            delay: 120,
+            delayOnTouchOnly: true,
             ghostClass: "sortable-ghost",
             dragClass: "sortable-drag",
             onEnd: () => {
@@ -1005,8 +1271,8 @@
       const filteredTotal = currentFilter === "all" ? spots.length : spots.filter(s => s.day === Number(currentFilter)).length;
       if (subtitle) {
         subtitle.textContent = currentFilter === "all"
-          ? `顯示全部 7 天，共 ${filteredTotal} 個行程點（可按住左側 ⠿ 上下拖曳調整順序）`
-          : `僅顯示 ${DAYS_CONFIG[Number(currentFilter)]?.name}，共 ${filteredTotal} 個行程點（可按住左側 ⠿ 上下拖曳調整順序）`;
+          ? `顯示全部 7 天，共 ${filteredTotal} 個行程點（整列皆可直接按住上下拖曳排序）`
+          : `僅顯示 ${DAYS_CONFIG[Number(currentFilter)]?.fullName}，共 ${filteredTotal} 個行程點（整列皆可直接按住上下拖曳排序）`;
       }
 
       let rowsHtml = "";
@@ -1019,7 +1285,7 @@
             <tr class="hover:bg-slate-50" data-empty-day="${d}">
               <td class="py-3 px-2 text-center text-slate-300">-</td>
               <td class="py-3 px-4 align-top">
-                <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white" style="background-color: ${cfg.stroke}">${cfg.name}</span>
+                <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr}</span>
                 <div class="text-xs text-slate-500 font-medium mt-1">${cfg.label}</div>
               </td>
               <td colspan="4" class="py-3 px-4 text-slate-400 text-xs italic">當日尚未安排行程</td>
@@ -1036,16 +1302,16 @@
           const details = parseSpotDetails(spot);
 
           rowsHtml += `
-            <tr class="table-spot-row hover:bg-indigo-50/40 transition ${idx === 0 ? 'border-t-2 border-slate-200' : ''}" data-id="${spot.id}" data-day="${spot.day}">
+            <tr class="table-spot-row hover:bg-indigo-50/40 transition select-none ${idx === 0 ? 'border-t-2 border-slate-200' : ''}" data-id="${spot.id}" data-day="${spot.day}">
               <td class="py-3.5 px-2 align-top text-center">
-                <span class="drag-handle text-slate-300 hover:text-slate-600 text-base select-none px-1.5 py-1" title="按住上下拖曳排序">⠿</span>
+                <span class="text-slate-300 hover:text-slate-600 text-base select-none px-1.5 py-1" title="整列皆可按住上下拖曳排序">⠿</span>
               </td>
-              <td class="py-3.5 px-4 align-top">
+              <td class="py-3.5 px-4 align-top whitespace-nowrap">
                 ${idx === 0 ? `
-                  <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-sm" style="background-color: ${cfg.stroke}">${cfg.name}</span>
+                  <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-sm" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr}</span>
                   <div class="text-xs text-slate-600 font-semibold mt-1">${cfg.label}</div>
                 ` : `
-                  <span class="text-xs font-bold text-slate-400 pl-1">${cfg.name}</span>
+                  <span class="text-xs font-bold text-slate-400 pl-1">${cfg.name} <span class="font-normal">${cfg.dateStr}</span></span>
                 `}
               </td>
               <td class="py-3.5 px-3 align-top text-center">
@@ -1090,8 +1356,8 @@
               </td>
               <td class="py-3.5 px-4 align-top whitespace-nowrap text-right">
                 <div class="inline-flex items-center gap-1.5">
-                  <button class="table-locate-btn px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-bold transition" data-id="${spot.id}" title="切回地圖並定位">
-                    📍 地圖
+                  <button class="table-locate-btn px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-bold transition" data-id="${spot.id}" title="切回地圖並查看路線">
+                    📍 路線
                   </button>
                   <button class="table-edit-btn px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-semibold transition" data-id="${spot.id}">
                     ✏️ 編輯
@@ -1108,15 +1374,18 @@
 
       tbody.innerHTML = rowsHtml;
 
-      // Initialize Sortable on Table Body
+      // Initialize Sortable on Table Body (Entire row draggable without needing to grab ⠿)
       if (sortableTableInstance) {
         sortableTableInstance.destroy();
         sortableTableInstance = null;
       }
       if (window.Sortable) {
         sortableTableInstance = Sortable.create(tbody, {
-          handle: ".drag-handle",
           draggable: ".table-spot-row",
+          filter: "button, a, input, .table-toggle-transit, .table-transit-panel",
+          preventOnFilter: false,
+          delay: 120,
+          delayOnTouchOnly: true,
           animation: 180,
           ghostClass: "sortable-ghost",
           dragClass: "sortable-drag",
@@ -1131,8 +1400,19 @@
       const tablePanel = document.getElementById("tablePanel");
       tablePanel.querySelectorAll("[data-locate-id]").forEach(el => {
         el.addEventListener("click", (e) => {
-          if (e.target.closest(".table-edit-btn") || e.target.closest(".drag-handle")) return;
+          if (e.target.closest(".table-edit-btn")) return;
           focusSpotOnMap(el.getAttribute("data-locate-id"));
+        });
+      });
+
+      tablePanel.querySelectorAll(".table-spot-row").forEach(rowEl => {
+        rowEl.addEventListener("click", (e) => {
+          if (
+            e.target.closest("button") ||
+            e.target.closest("a") ||
+            e.target.closest(".table-transit-panel")
+          ) return;
+          focusSpotOnMap(rowEl.getAttribute("data-id"));
         });
       });
 
@@ -1151,7 +1431,8 @@
       });
 
       tablePanel.querySelectorAll(".table-locate-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
           focusSpotOnMap(btn.getAttribute("data-id"));
         });
       });
@@ -1210,6 +1491,9 @@
       { name: "新倉山淺間公園 (忠靈塔・五重塔)", address: "山梨縣富士吉田市淺間2-4-1", lat: 35.501241, lng: 138.800051, keywords: "新倉山淺間公園 下吉田 忠靈塔 五重塔 富士山" },
       { name: "忍野八海", address: "山梨縣南都留郡忍野村忍草", lat: 35.460053, lng: 138.832761, keywords: "忍野八海 富士山 河口湖" },
       { name: "富士急樂園 (湯瑪士小火車樂園)", address: "山梨縣富士吉田市新西原5-6-1", lat: 35.486764, lng: 138.780511, keywords: "富士急樂園 湯瑪士小火車 河口湖" },
+      { name: "Toyota Rent a Car 富士河口湖店", address: "山梨縣南都留郡富士河口湖町船津4657-4", lat: 35.497500, lng: 138.763600, keywords: "toyota rent a car 河口湖 租車 取車" },
+      { name: "Toyota Rent a Car 御殿場站前店", address: "靜岡縣御殿場市新橋1946-6", lat: 35.299500, lng: 138.935500, keywords: "toyota rent a car 御殿場 域電廠 租車 還車 gotemba" },
+      { name: "御殿場 Premium Outlets", address: "靜岡縣御殿場市深澤1312", lat: 35.306900, lng: 138.966000, keywords: "御殿場 outlet 域電廠 gotemba 購物 富士山" },
       { name: "成田國際機場 (NRT)", address: "千葉縣成田市古込1-1", lat: 35.771986, lng: 140.392850, keywords: "成田機場 narita airport nrt" },
       { name: "東京羽田國際機場 (HND)", address: "東京都大田區羽田空港", lat: 35.549393, lng: 139.779839, keywords: "羽田機場 haneda airport hnd" }
     ];
@@ -1430,7 +1714,7 @@
       const rows = spots.map(s => {
         const desc = [s.notes, s.transit ? `交通：${s.transit}` : ""].filter(Boolean).join(" | ");
         return [
-          `D${s.day} (${DAYS_CONFIG[s.day]?.name || ''})`,
+          `"${DAYS_CONFIG[s.day]?.fullName || `D${s.day}`}"`,
           `"${s.name.replace(/"/g, '""')}"`,
           `"${(s.time || '').replace(/"/g, '""')}"`,
           s.lat,
@@ -1554,6 +1838,11 @@
 
       // Start Firebase Realtime Database
       initFirebase();
+
+      // Start Date Picker Listener
+      document.getElementById("startDateInput")?.addEventListener("change", (e) => {
+        saveStartDate(e.target.value);
+      });
 
       // View Mode Switchers
       document.getElementById("viewModeSplitBtn").addEventListener("click", () => switchViewMode("split"));
