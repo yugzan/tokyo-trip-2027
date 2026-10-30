@@ -14,8 +14,32 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --ui: 1;
+      --uis: 1;
+    }
+    html[data-fs="large"] {
+      --ui: 1.14;
+      --uis: 1.1;
+    }
+    html[data-fs="xlarge"] {
+      --ui: 1.28;
+      --uis: 1.2;
+    }
     body { font-family: 'M PLUS Rounded 1c', 'Noto Sans TC', sans-serif; }
-    #map { height: 100%; width: 100%; min-height: 420px; z-index: 10; }
+    /* Apply Rail Island style multi-tier font scaling when data-fs is active */
+    html[data-fs="large"] .spot-card h4,
+    html[data-fs="large"] .table-spot-row td { font-size: calc(0.875rem * var(--ui)) !important; }
+    html[data-fs="xlarge"] .spot-card h4,
+    html[data-fs="xlarge"] .table-spot-row td { font-size: calc(0.92rem * var(--ui)) !important; }
+    html[data-fs="large"] .spot-card p,
+    html[data-fs="large"] .spot-card .text-xs,
+    html[data-fs="large"] .kanban-card { font-size: calc(0.76rem * var(--uis)) !important; }
+    html[data-fs="xlarge"] .spot-card p,
+    html[data-fs="xlarge"] .spot-card .text-xs,
+    html[data-fs="xlarge"] .kanban-card { font-size: calc(0.8rem * var(--uis)) !important; }
+
+    #map { height: 100%; width: 100%; min-height: 420px; z-index: 10; background-color: #E2E8F0; }
     .custom-marker {
       display: flex;
       align-items: center;
@@ -31,7 +55,7 @@
     .sortable-drag { cursor: grabbing !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15) !important; }
     .spot-card, .kanban-card, .table-spot-row { cursor: grab; }
     .spot-card:active, .kanban-card:active, .table-spot-row:active { cursor: grabbing; }
-    .route-badge-icon { background: transparent; border: none; }
+    .route-badge-icon, .vehicle-div-icon { background: transparent; border: none; }
     @keyframes pulseRoute {
       0%, 100% { stroke-opacity: 0.95; }
       50% { stroke-opacity: 0.55; }
@@ -43,6 +67,20 @@
     }
     .mascot-float { animation: floatSlow 3.2s ease-in-out infinite; }
     .mascot-float-delay { animation: floatSlow 3.2s ease-in-out 1.5s infinite; }
+    @keyframes vehiclePulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
+      50% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+    }
+    .vehicle-avatar-pulse { animation: vehiclePulse 1.4s infinite ease-in-out; }
+
+    /* Japanese Enamel Station Sign (駅名標) signature hard shadow */
+    .ekimeihyo-plate {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FFFDF7 100%);
+      border: 2px solid #1E293B;
+      box-shadow: 0 3px 0 #1E293B, 0 8px 20px rgba(15, 23, 42, 0.18);
+      font-variant-numeric: tabular-nums;
+    }
+
     /* Cute subtle pastel polka-dot & character watermark background for blank areas */
     .cute-bg-pattern {
       background-color: #FFFDF9;
@@ -56,6 +94,59 @@
       background: linear-gradient(125deg, #4F46E5 0%, #7C3AED 38%, #DB2777 78%, #F59E0B 100%);
       position: relative;
       overflow: hidden;
+    }
+
+    /* Night Train Dark Theme (夜行模式 — inspired by Rail Island html[data-theme=dark]) */
+    html[data-theme="dark"] body,
+    html[data-theme="dark"] .cute-bg-pattern {
+      background-color: #0B1120 !important;
+      background-image:
+        radial-gradient(#1E293B 1.3px, transparent 1.3px),
+        radial-gradient(#172554 1.3px, #0B1120 1.3px) !important;
+      color: #E2E8F0 !important;
+    }
+    html[data-theme="dark"] .kawaii-header {
+      background: linear-gradient(125deg, #0F172A 0%, #1E1B4B 42%, #3B0764 78%, #451A03 100%);
+      border-bottom-color: rgba(148, 163, 184, 0.25);
+    }
+    html[data-theme="dark"] nav,
+    html[data-theme="dark"] #sidebarPanel,
+    html[data-theme="dark"] #tablePanel .bg-white,
+    html[data-theme="dark"] .spot-card,
+    html[data-theme="dark"] .kanban-card,
+    html[data-theme="dark"] #mapLegendBox,
+    html[data-theme="dark"] #playbackHud,
+    html[data-theme="dark"] .ekimeihyo-plate,
+    html[data-theme="dark"] .leaflet-popup-content-wrapper,
+    html[data-theme="dark"] .leaflet-popup-tip {
+      background: #131C31 !important;
+      border-color: #2A3B5C !important;
+      color: #ECF0F8 !important;
+    }
+    html[data-theme="dark"] .ekimeihyo-plate {
+      box-shadow: 0 3px 0 #090D16, 0 8px 24px rgba(0, 0, 0, 0.65) !important;
+    }
+    html[data-theme="dark"] .spot-card.bg-indigo-50\/70 {
+      background: #1E294B !important;
+      border-color: #818CF8 !important;
+    }
+    html[data-theme="dark"] #sidebarSubHeader,
+    html[data-theme="dark"] .bg-slate-50,
+    html[data-theme="dark"] .bg-slate-100 {
+      background: #1B2740 !important;
+      border-color: #2A3B5C !important;
+      color: #CBD5E1 !important;
+    }
+    html[data-theme="dark"] .text-slate-800,
+    html[data-theme="dark"] .text-slate-700 {
+      color: #F1F5F9 !important;
+    }
+    html[data-theme="dark"] .text-slate-600,
+    html[data-theme="dark"] .text-slate-500 {
+      color: #94A3B8 !important;
+    }
+    html[data-theme="dark"] #map .leaflet-tile-pane {
+      filter: brightness(0.78) invert(1) contrast(1.12) hue-rotate(205deg) saturate(0.65);
     }
   </style>
 </head>
@@ -168,17 +259,32 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-2 relative z-10">
+    <div class="flex items-center gap-1.5 sm:gap-2 relative z-10 flex-wrap">
       <!-- Sync Status Indicator -->
-      <div id="syncBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-black/20 backdrop-blur-sm border border-white/30 text-white">
+      <div id="syncBadge" class="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-black/20 backdrop-blur-sm border border-white/30 text-white">
         <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-300"></span>
         <span id="syncText">行程自動儲存</span>
       </div>
-      <button id="addSpotBtn" class="bg-amber-300 hover:bg-amber-400 text-slate-900 font-extrabold px-3.5 py-1.5 rounded-full text-sm flex items-center gap-1 shadow-md border-2 border-white transition hover:scale-105">
+      <!-- Rail Island Style: 3-Tier Font Scaling Button -->
+      <button id="fontSizeBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="切換字級大小（標準 / 大字 / 特大，適合長輩與手機閱讀）">
+        <span>🔠</span>
+        <span id="fontSizeLabel">標準字</span>
+      </button>
+      <!-- Rail Island Style: Night Train Dark Mode Button -->
+      <button id="themeToggleBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="切換亮色琺瑯 / 夜行深色地圖模式">
+        <span id="themeIcon">🌙</span>
+        <span id="themeLabel" class="hidden sm:inline">夜行</span>
+      </button>
+      <!-- Deep-Link Share Current View Button -->
+      <button id="shareViewBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="一鍵複製/分享目前天數與景點畫面連結給家人">
+        <span>🔗</span>
+        <span class="hidden sm:inline">分享畫面</span>
+      </button>
+      <button id="addSpotBtn" class="bg-amber-300 hover:bg-amber-400 text-slate-900 font-extrabold px-3.5 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 shadow-md border-2 border-white transition hover:scale-105">
         <span>➕</span> 新增景點
       </button>
-      <button id="exportCsvBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 border border-white/40 transition" title="匯出相容 Google My Maps 的 CSV">
-        <span>📥</span> 匯出地圖檔
+      <button id="exportCsvBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="匯出相容 Google My Maps 的 CSV">
+        <span>📥</span> <span class="hidden md:inline">匯出地圖檔</span>
       </button>
       <button id="resetBtn" class="bg-black/20 hover:bg-black/35 text-white/90 px-2.5 py-1.5 rounded-full text-xs transition border border-white/20" title="重置為初始預設行程">
         重置
@@ -186,18 +292,24 @@
     </div>
   </header>
 
-  <!-- Top Navigation: View Switcher & Day Filter Pills -->
+  <!-- Top Navigation: View Switcher, Playback Button & Day Filter Pills -->
   <nav class="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-20 flex-shrink-0">
-    <!-- Top Row on Mobile: View Mode Switcher + Mobile Sub-Tabs -->
+    <!-- Top Row on Mobile: View Mode Switcher + Animated Route Playback Trigger -->
     <div class="flex items-center justify-between gap-2 w-full sm:w-auto flex-shrink-0">
       <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 flex-1 sm:flex-initial">
-        <button id="viewModeSplitBtn" class="flex-1 sm:flex-initial justify-center px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
+        <button id="viewModeSplitBtn" class="flex-1 sm:flex-initial justify-center px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1 bg-indigo-600 text-white shadow-sm">
           <span>🗺️</span> 地圖與卡片
         </button>
-        <button id="viewModeTableBtn" class="flex-1 sm:flex-initial justify-center px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+        <button id="viewModeTableBtn" class="flex-1 sm:flex-initial justify-center px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1 text-slate-600 hover:text-slate-900">
           <span>📊</span> 每日總覽表格
         </button>
       </div>
+
+      <!-- Rail Island Style: Animated Route Playback Trigger -->
+      <button id="playbackToggleBtn" type="button" class="px-3 py-1.5 text-xs font-extrabold rounded-xl transition flex items-center gap-1 bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white shadow-md border border-white/60 hover:scale-105 whitespace-nowrap" title="沿著真實鐵道與自駕路線動態播放行程、自動跟車巡禮！">
+        <span id="playbackToggleIcon">🚂</span>
+        <span id="playbackToggleText">預演動線</span>
+      </button>
     </div>
 
     <!-- Day Filter Pills: 4x2 Grid on Mobile (Zero horizontal scroll needed!), Flex row on Desktop -->
@@ -220,9 +332,9 @@
     
     <!-- Sidebar / Itinerary List -->
     <aside id="sidebarPanel" class="w-full sm:w-96 md:w-[430px] bg-white border-r border-slate-200 flex flex-col z-10 overflow-hidden flex-shrink-0">
-      <div class="p-3 bg-gradient-to-r from-indigo-50 via-pink-50 to-amber-50 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
+      <div id="sidebarSubHeader" class="p-3 bg-gradient-to-r from-indigo-50 via-pink-50 to-amber-50 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
         <span id="spotCountLabel" class="font-bold text-slate-700">顯示 0 個地點</span>
-        <span class="text-indigo-600 font-semibold">✨ 整張卡片可拖曳 • 點擊看路線</span>
+        <span class="text-indigo-600 font-semibold">✨ 卡片可拖曳 • 點擊看鐵道/自駕軌跡</span>
       </div>
       <div id="itineraryList" class="flex-1 overflow-y-auto p-3 space-y-2.5 cute-bg-pattern">
         <!-- Rendered by JS -->
@@ -236,12 +348,89 @@
       <button id="mobileBackToListBtn" class="sm:hidden absolute top-3 left-14 z-[1000] bg-white text-indigo-700 font-bold px-3 py-1.5 rounded-full shadow-lg border border-indigo-200 text-xs flex items-center gap-1">
         ⬅️ 返回卡片列表
       </button>
-      <!-- Map Legend / Helper -->
-      <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur shadow-lg border border-slate-200 rounded-xl p-3 z-[1000] text-xs space-y-1.5 hidden md:block">
-        <div class="font-bold text-slate-800 flex items-center gap-1">🗺️ 地圖真實路線與操作說明</div>
-        <div class="text-slate-600">• <b>道路導航軌跡</b>：地圖直接顯示沿道路彎曲的路線與各段車程</div>
-        <div class="text-slate-600">• <b>點擊卡片定位</b>：自動高亮「上一站 ➔ 本站」專屬路線段</div>
-        <div class="text-slate-600">• <b>點擊地圖任意處</b>：可直接在該處新增景點</div>
+
+      <!-- Japanese Enamel Station Sign HUD (日式琺瑯駅名標 — ◀ 上一站｜本站｜下一站 ▶) -->
+      <div id="stationPlateHud" class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-[94%] max-w-md ekimeihyo-plate rounded-xl overflow-hidden transition-all">
+        <!-- Top Line Color & Transport Mode Bar -->
+        <div id="plateTopStripe" class="px-3 py-1 text-[11px] font-extrabold text-white flex items-center justify-between gap-2 bg-indigo-600">
+          <span id="plateLineBadge" class="flex items-center gap-1 truncate">🚄 京成 Skyliner 特急</span>
+          <span id="plateTimeBadge" class="bg-black/25 px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap">🕒 12:35</span>
+        </div>
+        <!-- Station Sign Main Body: Prev | Current Station | Next -->
+        <div class="px-2.5 py-2 flex items-center justify-between gap-1.5">
+          <button id="platePrevBtn" type="button" class="px-2 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1 transition max-w-[105px] truncate" title="前往上一站">
+            <span>◀</span>
+            <span id="platePrevName" class="truncate">上一站</span>
+          </button>
+          <div class="text-center flex-1 min-w-0 px-1">
+            <div id="plateCurrentName" class="font-black text-sm sm:text-base text-slate-800 truncate flex items-center justify-center gap-1">
+              東京晴空塔
+            </div>
+            <div id="plateSubInfo" class="text-[10px] font-bold text-slate-500 truncate mt-0.5">
+              D1 週三 • 第 3 站
+            </div>
+          </div>
+          <button id="plateNextBtn" type="button" class="px-2 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1 transition max-w-[105px] truncate" title="前往下一站">
+            <span id="plateNextName" class="truncate">下一站</span>
+            <span>▶</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Rail Island Style: Live Route Playback & Camera Follow Controller HUD -->
+      <div id="playbackHud" class="hidden absolute bottom-4 left-4 z-[1000] w-[92%] sm:w-80 bg-white/95 backdrop-blur-md shadow-2xl border-2 border-indigo-500/80 rounded-2xl p-3 text-xs space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 font-extrabold text-slate-800 truncate">
+            <span id="pbVehicleBadge" class="w-6 h-6 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-sm">🚄</span>
+            <span id="pbStatusTitle" class="truncate">行程動線預演中...</span>
+          </div>
+          <span id="pbDistanceLabel" class="font-mono font-bold text-[11px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full whitespace-nowrap">0.0 km</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div id="pbProgressBar" class="h-full bg-gradient-to-r from-indigo-500 via-pink-500 to-amber-500 transition-all duration-150" style="width: 0%"></div>
+        </div>
+
+        <div id="pbSegmentSubtitle" class="text-[11px] text-slate-600 font-medium truncate">
+          準備出發...
+        </div>
+
+        <div class="flex items-center justify-between gap-1.5 pt-1 border-t border-slate-100">
+          <div class="flex items-center gap-1">
+            <button id="pbPauseResumeBtn" type="button" class="px-2.5 py-1 rounded-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition">
+              ⏸️ 暫停
+            </button>
+            <button id="pbSpeedBtn" type="button" class="px-2 py-1 rounded-lg font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition" title="切換預演播放速度">
+              1× 速度
+            </button>
+            <button id="pbStopBtn" type="button" class="px-2 py-1 rounded-lg font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition">
+              ⏹️ 結束
+            </button>
+          </div>
+          <!-- Google-Nav / Rail Island Style Recenter Follow Button (shown when user pans map away) -->
+          <button id="recenterFollowBtn" type="button" class="hidden px-2.5 py-1 rounded-full font-extrabold bg-amber-400 hover:bg-amber-500 text-slate-900 shadow animate-bounce transition">
+            🎯 回到列車
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Legend / Helper (Updated with Dual-Track Rail vs. Self-Drive Road Visuals) -->
+      <div id="mapLegendBox" class="absolute bottom-4 right-4 bg-white/95 backdrop-blur shadow-lg border border-slate-200 rounded-xl p-3 z-[1000] text-xs space-y-1.5 hidden md:block">
+        <div class="font-bold text-slate-800 flex items-center gap-1">🗺️ 鐵道電車 × 富士山自駕 雙軌圖例</div>
+        <div class="flex items-center gap-2 text-slate-600">
+          <span class="inline-block w-7 h-2 rounded bg-blue-700 relative overflow-hidden"><span class="absolute inset-0 border-t-2 border-dashed border-white top-[3px]"></span></span>
+          <span><b>🚄/🚇 鐵道電車段</b>：黑白枕木鐵軌線（Skyliner/JR/富士回遊）</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-600">
+          <span class="inline-block w-7 h-2 rounded bg-purple-600 border border-white shadow-sm"></span>
+          <span><b>🚗 河口湖自駕段</b>：實線道路導航軌跡（D5~D6 租車自駕）</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-600">
+          <span class="inline-block w-7 h-0 border-t-[3px] border-dashed border-emerald-600"></span>
+          <span><b>🚌 直達巴士段</b>：跨海/高速巴士路線（D3 舞濱➔橫濱）</span>
+        </div>
+        <div class="text-[11px] text-indigo-600 font-semibold pt-0.5">💡 點擊上方「🚂 預演動線」可看列車/汽車沿軌跡動態奔馳！</div>
       </div>
     </section>
 
@@ -363,10 +552,10 @@
           <input type="text" id="spotName" required class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium" placeholder="例如：東京晴空塔">
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">歸屬天數</label>
-            <select id="spotDay" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <select id="spotDay" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white text-xs sm:text-sm">
               <option value="1">D1 (週三 - 抵達/晴空塔)</option>
               <option value="2">D2 (週四 - 迪士尼海洋)</option>
               <option value="3">D3 (週五 - 橫濱親子)</option>
@@ -378,7 +567,18 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">建議時間 / 時段</label>
-            <input type="text" id="spotTime" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例如：14:00~17:00">
+            <input type="text" id="spotTime" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs sm:text-sm" placeholder="例如：14:00~17:00">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">前往本站交通方式</label>
+            <select id="spotTransportMode" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white text-xs sm:text-sm">
+              <option value="auto">✨ 智慧判斷 (鐵道/自駕)</option>
+              <option value="express">🚄 特急列車 / Skyliner</option>
+              <option value="rail">🚇 一般電車 / 地鐵</option>
+              <option value="car">🚗 租車自駕 (公路線)</option>
+              <option value="bus">🚌 直達/高速巴士</option>
+              <option value="walk">🚶 步行 / 園區移動</option>
+            </select>
           </div>
         </div>
 
@@ -666,6 +866,14 @@
       }, 2500);
     }
 
+    let playbackLayer = null;
+    let isPlaybackRunning = false;
+    let isPlaybackPaused = false;
+    let isPlaybackFollowing = true;
+    let isProgrammaticPan = false;
+    let playbackSpeedMultiplier = 1;
+    let playbackAnimFrameId = null;
+
     // Init Leaflet Map
     function initMap() {
       map = L.map("map").setView([35.68, 139.65], 10);
@@ -677,9 +885,20 @@
       polylinesLayer = L.layerGroup().addTo(map);
       highlightRouteLayer = L.layerGroup().addTo(map);
       markersLayer = L.layerGroup().addTo(map);
+      playbackLayer = L.layerGroup().addTo(map);
 
-      // Click map to add spot
+      // Rail Island / Google Nav style: detach camera follow if user drags map during playback
+      map.on("dragstart", () => {
+        if (isPlaybackRunning && !isProgrammaticPan) {
+          isPlaybackFollowing = false;
+          const recenterBtn = document.getElementById("recenterFollowBtn");
+          if (recenterBtn) recenterBtn.classList.remove("hidden");
+        }
+      });
+
+      // Click map to add spot (ignore if playback is running)
       map.on("click", (e) => {
+        if (isPlaybackRunning) return;
         openModalForNew(e.latlng.lat, e.latlng.lng);
       });
     }
@@ -743,11 +962,20 @@
       }
       container.innerHTML = html;
 
+      // Update Playback button label dynamically
+      const pbText = document.getElementById("playbackToggleText");
+      if (pbText && !isPlaybackRunning) {
+        pbText.textContent = currentFilter === "all" ? "預演 7 天動線" : `預演 D${currentFilter} 動線`;
+      }
+
       // Attach filter listeners
       container.querySelectorAll(".filter-btn").forEach(btn => {
         btn.addEventListener("click", () => {
+          if (isPlaybackRunning) stopRoutePlayback(false);
           currentFilter = btn.getAttribute("data-day");
           activeSpotId = null;
+          updateStationPlateHud(null);
+          syncUrlState();
           // 若在「地圖與卡片」模式下點選天數篩選，確保卡片列表可見
           if (currentViewMode === "split") {
             ensureSplitPanelsVisible("list");
@@ -757,12 +985,137 @@
       });
     }
 
+    // Rail Island Inspired: Dual-Track Transport Classifier (Rail vs. Self-Drive vs. Bus)
+    function classifySegmentTransport(fromSpot, toSpot) {
+      const cfg = DAYS_CONFIG[toSpot.day] || DAYS_CONFIG[1];
+      const combinedText = `${fromSpot?.name || ""} ${toSpot?.name || ""} ${toSpot?.notes || ""} ${toSpot?.transit || ""}`;
+      const explicit = toSpot.transportMode || "auto";
+
+      // 1. Respect explicit user selection if not 'auto'
+      if (explicit === "express") {
+        return { mode: "express", isRail: true, icon: "🚄", lineName: "特急列車 / Skyliner", trackColor: "#1D4ED8", googleMode: "transit" };
+      }
+      if (explicit === "rail") {
+        return { mode: "rail", isRail: true, icon: "🚇", lineName: "東京電車 / JR", trackColor: cfg.stroke, googleMode: "transit" };
+      }
+      if (explicit === "car") {
+        return { mode: "car", isRail: false, icon: "🚗", lineName: "租車自駕公路", trackColor: "#7C3AED", googleMode: "driving" };
+      }
+      if (explicit === "bus") {
+        return { mode: "bus", isRail: false, icon: "🚌", lineName: "直達/高速巴士", trackColor: "#059669", googleMode: "transit" };
+      }
+      if (explicit === "walk") {
+        return { mode: "walk", isRail: false, icon: "🚶", lineName: "步行 / 園區散步", trackColor: "#64748B", googleMode: "walking" };
+      }
+
+      // 2. Smart inference for Tokyo 2027 Family Trip
+      if (/Skyliner|成田/i.test(combinedText)) {
+        return { mode: "express", isRail: true, icon: "🚄", lineName: "京成 Skyliner 特急", trackColor: "#003893", googleMode: "transit" };
+      }
+      if (/富士回遊|新宿.*河口湖/i.test(combinedText) || (toSpot.day === 5 && /Toyota|取車/i.test(toSpot.name) && /新宿/i.test(fromSpot?.name || ""))) {
+        return { mode: "express", isRail: true, icon: "🚄", lineName: "JR 富士回遊特急", trackColor: "#EA580C", googleMode: "transit" };
+      }
+      if (/自駕|租車|還車|SUBARU|天上山|溫泉旅館|御殿場駅前/i.test(combinedText) && (toSpot.day === 5 || toSpot.day === 6)) {
+        const isBeforePickup = /新宿車站/i.test(toSpot.name);
+        if (!isBeforePickup) {
+          return { mode: "car", isRail: false, icon: "🚗", lineName: "富士山河口湖自駕", trackColor: "#7C3AED", googleMode: "driving" };
+        }
+      }
+      if (/直達橫濱巴士|高速巴士|巴士/i.test(combinedText) && !/或JR/i.test(combinedText)) {
+        return { mode: "bus", isRail: false, icon: "🚌", lineName: "灣岸高速直達巴士", trackColor: "#059669", googleMode: "transit" };
+      }
+      if (/迪士尼|Disney|舞濱/i.test(toSpot.name)) {
+        return { mode: "rail", isRail: true, icon: "🚇", lineName: "JR 京葉線・迪士尼線", trackColor: "#DB2777", googleMode: "transit" };
+      }
+      if (/三麗鷗|讀賣|PokéPark/i.test(toSpot.name)) {
+        return { mode: "rail", isRail: true, icon: "🚇", lineName: "京王線電車", trackColor: "#D97706", googleMode: "transit" };
+      }
+      if (/荒川遊園地/i.test(toSpot.name)) {
+        return { mode: "rail", isRail: true, icon: "🚋", lineName: "都電荒川線路面電車", trackColor: "#D97706", googleMode: "transit" };
+      }
+      if (/晴空塔/i.test(toSpot.name)) {
+        return { mode: "rail", isRail: true, icon: "🚇", lineName: "東京メトロ銀座線/淺草線", trackColor: "#2563EB", googleMode: "transit" };
+      }
+      if (/上野/i.test(toSpot.name) && /橫濱/i.test(fromSpot?.name || "")) {
+        return { mode: "rail", isRail: true, icon: "🚇", lineName: "JR 上野東京線", trackColor: "#059669", googleMode: "transit" };
+      }
+      if (/上野/i.test(toSpot.name) && /御殿場/i.test(fromSpot?.name || "")) {
+        return { mode: "express", isRail: true, icon: "🚄", lineName: "高速巴士 / JR 返東京", trackColor: "#0891B2", googleMode: "transit" };
+      }
+      const distKm = fromSpot ? calcDirectDistanceKm(fromSpot.lat, fromSpot.lng, toSpot.lat, toSpot.lng) : 0;
+      if (distKm > 0 && distKm < 1.3) {
+        return { mode: "walk", isRail: false, icon: "🚶", lineName: "園區 / 港區漫步", trackColor: cfg.stroke, googleMode: "walking" };
+      }
+      return { mode: "rail", isRail: true, icon: "🚇", lineName: "JR 山手線 / 東京地鐵", trackColor: cfg.stroke, googleMode: "transit" };
+    }
+
+    // Update Japanese Enamel Station Sign HUD (日式琺瑯駅名標) on Map
+    function updateStationPlateHud(spot) {
+      const hud = document.getElementById("stationPlateHud");
+      if (!hud) return;
+      if (!spot) {
+        hud.classList.add("hidden");
+        return;
+      }
+
+      const listPool = currentFilter === "all" ? spots : spots.filter(s => s.day === Number(currentFilter));
+      const idxInPool = listPool.findIndex(s => s.id === spot.id);
+      const prevInPool = idxInPool > 0 ? listPool[idxInPool - 1] : null;
+      const nextInPool = idxInPool >= 0 && idxInPool < listPool.length - 1 ? listPool[idxInPool + 1] : null;
+
+      const daySpots = spots.filter(s => s.day === spot.day);
+      const seqInDay = daySpots.findIndex(s => s.id === spot.id) + 1;
+      const cfg = DAYS_CONFIG[spot.day] || DAYS_CONFIG[1];
+      const nav = getSpotNavigation(spot);
+
+      const topStripe = document.getElementById("plateTopStripe");
+      const lineBadge = document.getElementById("plateLineBadge");
+      const timeBadge = document.getElementById("plateTimeBadge");
+      const curNameEl = document.getElementById("plateCurrentName");
+      const subInfoEl = document.getElementById("plateSubInfo");
+      const prevBtn = document.getElementById("platePrevBtn");
+      const nextBtn = document.getElementById("plateNextBtn");
+      const prevNameEl = document.getElementById("platePrevName");
+      const nextNameEl = document.getElementById("plateNextName");
+
+      const barColor = nav.transport ? nav.transport.trackColor : cfg.stroke;
+      if (topStripe) topStripe.style.backgroundColor = barColor;
+      if (lineBadge) {
+        lineBadge.innerHTML = nav.hasRoute
+          ? `<span>${nav.transport.icon}</span><span>${nav.transport.lineName}（從 ${nav.fromName}）</span>`
+          : `<span>📍</span><span>${cfg.fullName} 起點站</span>`;
+      }
+      if (timeBadge) timeBadge.textContent = `🕒 ${spot.time || "彈性時段"}`;
+      if (curNameEl) curNameEl.innerHTML = `${getSpotMascotBadge(spot.name)}<span class="truncate">${spot.name}</span>`;
+      if (subInfoEl) subInfoEl.textContent = `${cfg.fullName} • 第 ${seqInDay} 站 / 共 ${daySpots.length} 站`;
+
+      if (prevBtn && prevNameEl) {
+        prevBtn.disabled = !prevInPool;
+        prevNameEl.textContent = prevInPool ? shortenPlaceName(prevInPool.name) : "起點";
+        prevBtn.onclick = () => {
+          if (prevInPool) focusSpotOnMap(prevInPool.id);
+        };
+      }
+      if (nextBtn && nextNameEl) {
+        nextBtn.disabled = !nextInPool;
+        nextNameEl.textContent = nextInPool ? shortenPlaceName(nextInPool.name) : "終點";
+        nextBtn.onclick = () => {
+          if (nextInPool) focusSpotOnMap(nextInPool.id);
+        };
+      }
+
+      hud.classList.remove("hidden");
+    }
+
     // Focus a specific spot on the map, highlight its incoming route, and open its popup
-    function focusSpotOnMap(spotId) {
+    function focusSpotOnMap(spotId, fromPlayback = false) {
       const spot = spots.find(s => s.id === spotId);
       if (!spot || !map) return;
 
       activeSpotId = spotId;
+      if (!fromPlayback) {
+        syncUrlState();
+      }
 
       // 若目前在表格模式，先切換回地圖與卡片模式
       if (currentViewMode !== "split") {
@@ -777,7 +1130,16 @@
       }
 
       renderItinerary();
+      updateStationPlateHud(spot);
       renderActiveRouteHighlight(spot);
+
+      // Scroll sidebar card into view smoothly
+      const activeCardEl = document.querySelector(`.spot-card[data-id="${spot.id}"]`);
+      if (activeCardEl) {
+        activeCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      if (fromPlayback) return;
 
       setTimeout(() => {
         map.invalidateSize();
@@ -788,7 +1150,7 @@
             [nav.prevSpot.lat, nav.prevSpot.lng],
             [spot.lat, spot.lng]
           );
-          map.flyToBounds(segBounds, { padding: [70, 70], maxZoom: 15, duration: 0.8 });
+          map.flyToBounds(segBounds, { padding: [75, 75], maxZoom: 15, duration: 0.8 });
         } else {
           map.flyTo([spot.lat, spot.lng], 15, { duration: 0.8 });
         }
@@ -808,7 +1170,7 @@
         .slice(0, 10) || "上一站";
     }
 
-    // Helper: Build Google Maps Navigation URL (Method B: Origin -> Destination)
+    // Helper: Build Google Maps Navigation URL + Dual-Track Transport Info
     function getSpotNavigation(spot) {
       const daySpots = spots.filter(s => s.day === spot.day);
       const idx = daySpots.findIndex(s => s.id === spot.id);
@@ -829,23 +1191,25 @@
 
       const sameLocation = prevSpot && Math.abs(prevSpot.lat - spot.lat) < 0.0005 && Math.abs(prevSpot.lng - spot.lng) < 0.0005;
       if (prevSpot && !sameLocation) {
-        const isCarDay = (spot.day === 5 && idx > 0) || (spot.day === 6 && idx === 0);
-        const mode = isCarDay ? "driving" : "transit";
-        const url = `https://www.google.com/maps/dir/?api=1&origin=${prevSpot.lat},${prevSpot.lng}&destination=${spot.lat},${spot.lng}&travelmode=${mode}`;
+        const transport = classifySegmentTransport(prevSpot, spot);
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${prevSpot.lat},${prevSpot.lng}&destination=${spot.lat},${spot.lng}&travelmode=${transport.googleMode}`;
         return {
           hasRoute: true,
           prevSpot,
           fromName: shortenPlaceName(prevSpot.name),
-          modeIcon: mode === "driving" ? "🚗" : "🚇",
+          modeIcon: transport.icon,
+          transport,
           url
         };
       }
 
+      const fallbackTransport = classifySegmentTransport(null, spot);
       return {
         hasRoute: false,
         prevSpot: null,
         fromName: "",
         modeIcon: "🗺️",
+        transport: fallbackTransport,
         url: `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
       };
     }
@@ -914,7 +1278,7 @@
       // Outer bright amber/yellow highlight glow
       L.polyline(seg.coords, {
         color: "#FBBF24",
-        weight: 12,
+        weight: 13,
         opacity: 0.85,
         lineCap: "round",
         lineJoin: "round",
@@ -923,13 +1287,13 @@
 
       // Inner crisp navigation line
       const activeLine = L.polyline(seg.coords, {
-        color: "#1E1B4B",
-        weight: 4,
-        dashArray: "8, 8",
-        opacity: 0.95
+        color: nav.transport?.trackColor || "#1E1B4B",
+        weight: 5,
+        dashArray: nav.transport?.isRail ? "6, 8" : "10, 6",
+        opacity: 0.98
       }).addTo(highlightRouteLayer);
 
-      activeLine.bindTooltip(`🎯 當前導航段：${nav.fromName} ➔ ${shortenPlaceName(spot.name)} (${seg.distanceKm} km)`, {
+      activeLine.bindTooltip(`🎯 ${nav.transport?.icon || "🚇"} ${nav.transport?.lineName || "導航段"}：${nav.fromName} ➔ ${shortenPlaceName(spot.name)} (${seg.distanceKm} km)`, {
         sticky: true,
         className: "font-bold text-xs"
       });
@@ -1062,11 +1426,12 @@
                   <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-1">
                     <span class="px-2 py-0.5 rounded-md font-bold text-[11px] text-white" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr}</span>
                     <span class="font-medium text-slate-600">🕒 ${spot.time || '彈性時間'}</span>
+                    ${nav.hasRoute ? `<span class="px-2 py-0.5 rounded-full font-bold text-[10px] text-white shadow-sm flex items-center gap-0.5" style="background-color: ${nav.transport.trackColor}">${nav.transport.icon} ${nav.transport.lineName}</span>` : ''}
                   </div>
                 </div>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">
-                <button class="locate-btn px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition" data-id="${spot.id}" title="在地圖上定位並高亮路線">
+                <button class="locate-btn px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition" data-id="${spot.id}" title="在地圖上定位並顯示日式駅名標">
                   📍路線
                 </button>
                 <button class="edit-btn p-1 text-slate-400 hover:text-indigo-600 rounded" data-id="${spot.id}" title="編輯">
@@ -1185,7 +1550,7 @@
       });
     }
 
-    // Render Markers & Real Road Route Lines on Leaflet
+    // Render Markers & Dual-Track (Rail Sleeper Ties vs. Self-Drive Highway) Lines on Leaflet
     let mapRenderToken = 0;
     function renderMap(shouldFitBounds = true) {
       if (!map) return;
@@ -1223,8 +1588,11 @@
           const details = parseSpotDetails(spot);
 
           const popupContent = `
-            <div class="p-1 min-w-[220px]">
-              <div class="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white inline-block mb-1" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr} • 第 ${idx + 1} 站</div>
+            <div class="p-1 min-w-[230px]">
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white inline-block" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr} • 第 ${idx + 1} 站</span>
+                ${nav.hasRoute ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style="background-color: ${nav.transport.trackColor}">${nav.transport.icon} ${nav.transport.lineName}</span>` : ''}
+              </div>
               <div class="font-bold text-sm text-slate-800 mt-0.5">${spot.name}</div>
               <div class="text-xs text-slate-600 font-medium mt-1">🕒 ${spot.time || '整天 / 彈性'}</div>
               ${details.cleanNotes ? `<div class="text-xs text-slate-700 mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 leading-relaxed">${details.cleanNotes}</div>` : ''}
@@ -1245,6 +1613,7 @@
 
           marker.on("popupopen", (e) => {
             activeSpotId = spot.id;
+            updateStationPlateHud(spot);
             renderActiveRouteHighlight(spot);
             const el = e.popup.getElement();
             el.querySelector(".popup-edit")?.addEventListener("click", () => {
@@ -1256,69 +1625,98 @@
           });
         });
 
-        // Draw real road route segment-by-segment for this day
-        if (daySpots.length > 1) {
-          for (let i = 0; i < daySpots.length - 1; i++) {
-            const fromSpot = daySpots[i];
-            const toSpot = daySpots[i + 1];
-            const samePos = Math.abs(fromSpot.lat - toSpot.lat) < 0.0005 && Math.abs(fromSpot.lng - toSpot.lng) < 0.0005;
-            if (samePos) continue;
-
-            // Draw immediate straight line first, then upgrade to real road geometry
-            const whiteHalo = L.polyline([[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]], {
-              color: "#FFFFFF",
-              weight: 8,
-              opacity: 0.9,
-              lineCap: "round",
-              lineJoin: "round"
-            }).addTo(polylinesLayer);
-
-            const colorLine = L.polyline([[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]], {
-              color: cfg.stroke,
-              weight: 4.5,
-              opacity: 0.92,
-              lineCap: "round",
-              lineJoin: "round"
-            }).addTo(polylinesLayer);
-
-            const navInfo = getSpotNavigation(toSpot);
-
-            fetchRoadSegmentGeometry(fromSpot, toSpot).then(seg => {
-              if (currentToken !== mapRenderToken) return;
-              if (seg && seg.coords && seg.coords.length > 1) {
-                whiteHalo.setLatLngs(seg.coords);
-                colorLine.setLatLngs(seg.coords);
-
-                colorLine.bindTooltip(
-                  `${cfg.name} (${cfg.dateStr})：#${i + 1} ${shortenPlaceName(fromSpot.name)} ➔ #${i + 2} ${shortenPlaceName(toSpot.name)}（約 ${seg.distanceKm} km）`,
-                  { sticky: true, className: "font-bold text-xs" }
-                );
-
-                // When filtering a specific day (or if segment is long enough), show midpoint route distance pill on map
-                if (currentFilter !== "all" && seg.coords.length >= 2) {
-                  const midIdx = Math.floor(seg.coords.length / 2);
-                  const midLatLng = seg.coords[midIdx];
-                  const badgeHtml = `
-                    <a href="${navInfo.url}" target="_blank" rel="noopener noreferrer"
-                       title="點擊開啟 Google Maps 導航"
-                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-800 border-2 shadow-md whitespace-nowrap hover:scale-105 transition"
-                       style="border-color: ${cfg.stroke}">
-                      <span>${navInfo.modeIcon}</span>
-                      <span>${seg.distanceKm}km</span>
-                    </a>
-                  `;
-                  const badgeIcon = L.divIcon({
-                    className: "route-badge-icon",
-                    html: badgeHtml,
-                    iconSize: [68, 22],
-                    iconAnchor: [34, 11]
-                  });
-                  L.marker(midLatLng, { icon: badgeIcon, interactive: true }).addTo(polylinesLayer);
-                }
-              }
-            });
+        // Build segments for this day (including cross-day hotel connection on single-day filter!)
+        const segmentsToDraw = [];
+        if (currentFilter !== "all" && daySpots.length > 0) {
+          const firstNav = getSpotNavigation(daySpots[0]);
+          if (firstNav.hasRoute && firstNav.prevSpot) {
+            segmentsToDraw.push({ fromSpot: firstNav.prevSpot, toSpot: daySpots[0], seqIdx: 0 });
           }
         }
+        for (let i = 0; i < daySpots.length - 1; i++) {
+          segmentsToDraw.push({ fromSpot: daySpots[i], toSpot: daySpots[i + 1], seqIdx: i + 1 });
+        }
+
+        segmentsToDraw.forEach(({ fromSpot, toSpot, seqIdx }) => {
+          const samePos = Math.abs(fromSpot.lat - toSpot.lat) < 0.0005 && Math.abs(fromSpot.lng - toSpot.lng) < 0.0005;
+          if (samePos) return;
+
+          const navInfo = getSpotNavigation(toSpot);
+          const transport = navInfo.transport || classifySegmentTransport(fromSpot, toSpot);
+          const initialPts = [[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]];
+
+          // Layer 1: Outer Crisp Halo
+          const outerHalo = L.polyline(initialPts, {
+            color: "#FFFFFF",
+            weight: transport.isRail ? 9 : 8,
+            opacity: 0.9,
+            lineCap: "round",
+            lineJoin: "round"
+          }).addTo(polylinesLayer);
+
+          // Layer 2: Main Track / Road Bed
+          const mainLine = L.polyline(initialPts, {
+            color: transport.trackColor || cfg.stroke,
+            weight: transport.isRail ? 6 : 5,
+            opacity: 0.94,
+            dashArray: transport.mode === "bus" ? "10, 6" : (transport.mode === "walk" ? "3, 7" : null),
+            lineCap: "round",
+            lineJoin: "round"
+          }).addTo(polylinesLayer);
+
+          // Layer 3 (Rail Only): Japanese Railway Sleeper Ties (黑白/彩白相間鐵軌枕木紋)
+          let railSleeperLine = null;
+          if (transport.isRail) {
+            railSleeperLine = L.polyline(initialPts, {
+              color: "#FFFFFF",
+              weight: 3.2,
+              opacity: 0.92,
+              dashArray: "4, 8",
+              lineCap: "butt",
+              lineJoin: "round",
+              interactive: false
+            }).addTo(polylinesLayer);
+          }
+
+          fetchRoadSegmentGeometry(fromSpot, toSpot).then(seg => {
+            if (currentToken !== mapRenderToken) return;
+            if (seg && seg.coords && seg.coords.length > 1) {
+              outerHalo.setLatLngs(seg.coords);
+              mainLine.setLatLngs(seg.coords);
+              if (railSleeperLine) railSleeperLine.setLatLngs(seg.coords);
+
+              mainLine.bindTooltip(
+                `${cfg.name} (${cfg.dateStr}) • ${transport.icon} ${transport.lineName}：${shortenPlaceName(fromSpot.name)} ➔ ${shortenPlaceName(toSpot.name)}（約 ${seg.distanceKm} km）`,
+                { sticky: true, className: "font-bold text-xs" }
+              );
+
+              // Show route badge on map when filtering a single day, OR on major express/self-drive trunks in 'all' view
+              const isMajorTrunk = transport.mode === "express" || (transport.mode === "car" && parseFloat(seg.distanceKm) >= 8);
+              if ((currentFilter !== "all" || isMajorTrunk) && seg.coords.length >= 2) {
+                const midIdx = Math.floor(seg.coords.length / 2);
+                const midLatLng = seg.coords[midIdx];
+                const shortLineLabel = currentFilter === "all"
+                  ? `${transport.icon} ${transport.lineName.slice(0, 8)}`
+                  : `${transport.icon} ${transport.lineName} • ${seg.distanceKm}km`;
+                const badgeHtml = `
+                  <a href="${navInfo.url}" target="_blank" rel="noopener noreferrer"
+                     title="點擊開啟 Google Maps (${transport.lineName})"
+                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/95 text-slate-800 border-2 shadow-md whitespace-nowrap hover:scale-105 transition"
+                     style="border-color: ${transport.trackColor}">
+                    <span>${shortLineLabel}</span>
+                  </a>
+                `;
+                const badgeIcon = L.divIcon({
+                  className: "route-badge-icon",
+                  html: badgeHtml,
+                  iconSize: [120, 22],
+                  iconAnchor: [60, 11]
+                });
+                L.marker(midLatLng, { icon: badgeIcon, interactive: true }).addTo(polylinesLayer);
+              }
+            }
+          });
+        });
       });
 
       if (activeSpotId) {
@@ -1326,7 +1724,7 @@
         if (activeSpot) renderActiveRouteHighlight(activeSpot);
       }
 
-      if (shouldFitBounds && bounds.length > 0) {
+      if (shouldFitBounds && bounds.length > 0 && !isPlaybackRunning) {
         map.fitBounds(bounds, { padding: [45, 45], maxZoom: 14 });
       }
     }
@@ -1491,6 +1889,7 @@
                 <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5 flex-wrap">
                   ${getSpotMascotBadge(spot.name)}
                   <span>${spot.name}</span>
+                  ${nav.hasRoute ? `<span class="px-2 py-0.5 rounded-full font-bold text-[10px] text-white shadow-sm inline-flex items-center gap-0.5" style="background-color: ${nav.transport.trackColor}">${nav.transport.icon} ${nav.transport.lineName}</span>` : ''}
                 </div>
               </td>
               <td class="py-3.5 px-4 align-top">
@@ -1886,6 +2285,7 @@
       document.getElementById("searchResultsBox").classList.add("hidden");
       document.getElementById("spotDay").value = forceDay ? String(forceDay) : (currentFilter === "all" ? "1" : currentFilter);
       document.getElementById("spotTime").value = "";
+      document.getElementById("spotTransportMode").value = "auto";
       document.getElementById("spotNotes").value = "";
       document.getElementById("spotTransit").value = "";
       document.getElementById("modal").classList.remove("hidden");
@@ -1904,6 +2304,7 @@
       document.getElementById("searchResultsBox").classList.add("hidden");
       document.getElementById("spotDay").value = spot.day;
       document.getElementById("spotTime").value = spot.time || "";
+      document.getElementById("spotTransportMode").value = spot.transportMode || "auto";
       // If transit was previously mixed inside notes, pre-split it neatly for the user
       if (!spot.transit && details.rawTransit) {
         const noteWithUrls = [details.cleanNotes, ...details.urls].filter(Boolean).join(" ");
@@ -1985,6 +2386,7 @@
       const mobileSubTabs = document.getElementById("mobileSubTabs");
 
       if (mode === "table") {
+        if (isPlaybackRunning) stopRoutePlayback(false);
         // Activate Table Button style
         tableBtn.classList.add("bg-indigo-600", "text-white", "shadow-sm");
         tableBtn.classList.remove("text-slate-600");
@@ -2018,6 +2420,7 @@
         }
         if (map) setTimeout(() => map.invalidateSize(), 150);
       }
+      syncUrlState();
     }
 
     // Mobile tabs switch (Only affects < 640px screens)
@@ -2054,10 +2457,410 @@
       }
     }
 
+    // ==========================================
+    // Rail Island Inspired Feature #5:
+    // 3-Tier Font Scaling, Night Train Dark Theme & URL Deep-Link
+    // ==========================================
+    const FONT_SIZES = ["normal", "large", "xlarge"];
+    const FONT_SIZE_LABELS = { normal: "標準", large: "大字", xlarge: "特大" };
+
+    function applyFontSizeSetting(fs) {
+      if (fs === "large" || fs === "xlarge") {
+        document.documentElement.setAttribute("data-fs", fs);
+      } else {
+        document.documentElement.removeAttribute("data-fs");
+        fs = "normal";
+      }
+      const label = document.getElementById("fontSizeLabel");
+      if (label) label.textContent = FONT_SIZE_LABELS[fs] || "標準";
+      localStorage.setItem(FONT_SIZE_KEY, fs);
+    }
+
+    function cycleFontSize() {
+      const current = localStorage.getItem(FONT_SIZE_KEY) || "normal";
+      const next = FONT_SIZES[(FONT_SIZES.indexOf(current) + 1) % FONT_SIZES.length];
+      applyFontSizeSetting(next);
+      showToast(`🔠 字級已切換為「${FONT_SIZE_LABELS[next]}」模式`);
+    }
+
+    function applyThemeSetting(theme) {
+      const isDark = theme === "dark";
+      if (isDark) {
+        document.documentElement.setAttribute("data-theme", "dark");
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+      const icon = document.getElementById("themeIcon");
+      const label = document.getElementById("themeLabel");
+      if (icon) icon.textContent = isDark ? "☀️" : "🌙";
+      if (label) label.textContent = isDark ? "日間" : "夜行";
+      localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    }
+
+    function toggleDarkTheme() {
+      const cur = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      const next = cur === "dark" ? "light" : "dark";
+      applyThemeSetting(next);
+      showToast(next === "dark" ? "🌙 已切換至「夜行列車深色模式」" : "☀️ 已切換至「日間明亮模式」");
+    }
+
+    function syncUrlState() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (currentFilter && currentFilter !== "all") {
+          params.set("day", currentFilter);
+        } else {
+          params.delete("day");
+        }
+        if (activeSpotId) {
+          params.set("spot", activeSpotId);
+        } else {
+          params.delete("spot");
+        }
+        if (currentViewMode === "table") {
+          params.set("view", "table");
+        } else {
+          params.delete("view");
+        }
+        const qs = params.toString();
+        const newUrl = window.location.pathname + (qs ? `?${qs}` : "");
+        window.history.replaceState(null, "", newUrl);
+      } catch (e) {}
+    }
+
+    function applyUrlDeepLink() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const qDay = params.get("day");
+        const qSpot = params.get("spot");
+        const qView = params.get("view");
+        if (qDay && (qDay === "all" || (Number(qDay) >= 1 && Number(qDay) <= 7))) {
+          currentFilter = String(qDay);
+        }
+        if (qView === "table") {
+          setTimeout(() => switchViewMode("table"), 60);
+        }
+        if (qSpot && spots.some(s => s.id === qSpot)) {
+          setTimeout(() => focusSpotOnMap(qSpot), 350);
+        }
+      } catch (e) {}
+    }
+
+    function shareCurrentView() {
+      syncUrlState();
+      const shareUrl = window.location.href;
+      const activeSpot = spots.find(s => s.id === activeSpotId);
+      const dayTitle = currentFilter === "all" ? "東京 7 天 6 夜全行程" : (DAYS_CONFIG[currentFilter]?.fullName || `D${currentFilter}`);
+      const spotTitle = activeSpot ? ` 📍 ${activeSpot.name}` : "";
+      const shareText = `🗼 2027 東京家族之旅 (${dayTitle}${spotTitle})：${shareUrl}`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showToast(`🔗 已複製「${dayTitle}${spotTitle}」專屬連結！可直接貼給家人`);
+        }).catch(() => {
+          prompt("請複製以下連結分享給家人：", shareUrl);
+        });
+      } else {
+        prompt("請複製以下連結分享給家人：", shareText);
+      }
+    }
+
+    // ==========================================
+    // Rail Island Inspired Feature #3:
+    // Route Playback & Camera Follow Mode (行程動態跟車預演模式)
+    // ==========================================
+    function interpolateAlongCoords(coords, t) {
+      if (!coords || coords.length === 0) return [35.6895, 139.6917];
+      if (coords.length === 1 || t <= 0) return coords[0];
+      if (t >= 1) return coords[coords.length - 1];
+
+      let totalLen = 0;
+      const segLens = [];
+      for (let i = 0; i < coords.length - 1; i++) {
+        const dLat = coords[i + 1][0] - coords[i][0];
+        const dLng = coords[i + 1][1] - coords[i][1];
+        const d = Math.hypot(dLat, dLng);
+        segLens.push(d);
+        totalLen += d;
+      }
+      if (totalLen === 0) return coords[0];
+
+      const target = t * totalLen;
+      let acc = 0;
+      for (let i = 0; i < segLens.length; i++) {
+        if (acc + segLens[i] >= target) {
+          const localT = segLens[i] === 0 ? 0 : (target - acc) / segLens[i];
+          return [
+            coords[i][0] + (coords[i + 1][0] - coords[i][0]) * localT,
+            coords[i][1] + (coords[i + 1][1] - coords[i][1]) * localT
+          ];
+        }
+        acc += segLens[i];
+      }
+      return coords[coords.length - 1];
+    }
+
+    function easeInOutSine(x) {
+      return -(Math.cos(Math.PI * x) - 1) / 2;
+    }
+
+    async function startRoutePlayback() {
+      if (isPlaybackRunning) {
+        stopRoutePlayback(true);
+        return;
+      }
+
+      const targetSpots = currentFilter === "all" ? spots : spots.filter(s => s.day === Number(currentFilter));
+      if (targetSpots.length < 2) {
+        showToast("⚠️ 至少需要 2 個景點才能啟動行程動態跟車預演喔！");
+        return;
+      }
+
+      // Ensure Map is visible (switch from table or mobile list to map)
+      if (currentViewMode === "table") {
+        switchViewMode("split");
+      }
+      ensureSplitPanelsVisible("map");
+      map.closePopup();
+
+      isPlaybackRunning = true;
+      isPlaybackPaused = false;
+      isCameraFollowLocked = true;
+
+      // Update Nav button appearance
+      const toggleBtn = document.getElementById("playbackToggleBtn");
+      const toggleIcon = document.getElementById("playbackToggleIcon");
+      const toggleText = document.getElementById("playbackToggleText");
+      if (toggleBtn) {
+        toggleBtn.classList.remove("from-emerald-500", "to-teal-600");
+        toggleBtn.classList.add("from-rose-500", "to-amber-600");
+      }
+      if (toggleIcon) toggleIcon.textContent = "⏹";
+      if (toggleText) toggleText.textContent = "停止預演";
+
+      // Show Playback HUD & hide Station Plate to avoid overlap
+      const hud = document.getElementById("playbackHud");
+      const stationHud = document.getElementById("stationPlateHud");
+      if (hud) hud.classList.remove("hidden");
+      if (stationHud) stationHud.classList.add("hidden");
+      document.getElementById("recenterFollowBtn")?.classList.add("hidden");
+      document.getElementById("playbackPauseBtn").textContent = "⏸";
+
+      // Build segments with OSRM geometry
+      document.getElementById("playbackStatusText").textContent = "正在載入軌道與公路幾何路線...";
+      playbackSegments = [];
+      for (let i = 0; i < targetSpots.length - 1; i++) {
+        if (!isPlaybackRunning) return;
+        const fromSpot = targetSpots[i];
+        const toSpot = targetSpots[i + 1];
+        const transport = classifySegmentTransport(fromSpot, toSpot);
+        const roadSeg = await fetchRoadSegmentGeometry(fromSpot, toSpot);
+        playbackSegments.push({
+          index: i,
+          fromSpot,
+          toSpot,
+          transport,
+          coords: roadSeg.coords,
+          distanceKm: roadSeg.distanceKm,
+          durationMin: roadSeg.durationMin,
+          baseDurationMs: Math.max(2600, Math.min(4800, Number(roadSeg.distanceKm) * 140 + 2400))
+        });
+      }
+
+      if (!isPlaybackRunning || playbackSegments.length === 0) return;
+
+      playbackCurrentSegIdx = 0;
+      playbackSegElapsedMs = 0;
+      playbackLastTimestamp = null;
+
+      // Create animated vehicle marker & progressive trail
+      playbackLayer.clearLayers();
+      const firstSeg = playbackSegments[0];
+      playbackTrailLine = L.polyline([ [firstSeg.fromSpot.lat, firstSeg.fromSpot.lng] ], {
+        color: "#F59E0B",
+        weight: 6,
+        opacity: 0.9,
+        lineCap: "round"
+      }).addTo(playbackLayer);
+
+      const createVehicleDivIcon = (seg) => L.divIcon({
+        className: "playback-vehicle-marker",
+        html: `
+          <div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;">
+            <div class="vehicle-avatar-pulse" style="position:absolute;inset:0;border-radius:9999px;background:${seg.transport.trackColor};opacity:0.45;"></div>
+            <div style="position:relative;width:36px;height:36px;border-radius:9999px;background:${seg.transport.trackColor};border:3px solid #fff;box-shadow:0 4px 14px rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;font-size:20px;">
+              ${seg.transport.icon}
+            </div>
+          </div>
+        `,
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+      });
+
+      playbackVehicleMarker = L.marker([firstSeg.fromSpot.lat, firstSeg.fromSpot.lng], {
+        icon: createVehicleDivIcon(firstSeg),
+        zIndexOffset: 2000
+      }).addTo(playbackLayer);
+
+      // Fly to initial station
+      isProgrammaticPan = true;
+      map.flyTo([firstSeg.fromSpot.lat, firstSeg.fromSpot.lng], 13, { duration: 0.8 });
+      setTimeout(() => { isProgrammaticPan = false; }, 900);
+
+      let lastRenderedSegIdx = -1;
+      const stepFrame = (timestamp) => {
+        if (!isPlaybackRunning) return;
+        if (!playbackLastTimestamp) playbackLastTimestamp = timestamp;
+        const deltaMs = timestamp - playbackLastTimestamp;
+        playbackLastTimestamp = timestamp;
+
+        if (!isPlaybackPaused) {
+          playbackSegElapsedMs += deltaMs * playbackSpeedMultiplier;
+        }
+
+        const seg = playbackSegments[playbackCurrentSegIdx];
+        if (!seg) {
+          stopRoutePlayback(false);
+          showToast("🎉 行程動態跟車預演完成！祝你們 2027 東京旅途愉快！");
+          return;
+        }
+
+        // Update HUD & Marker icon when entering a new segment
+        if (lastRenderedSegIdx !== playbackCurrentSegIdx) {
+          lastRenderedSegIdx = playbackCurrentSegIdx;
+          playbackVehicleMarker.setIcon(createVehicleDivIcon(seg));
+          document.getElementById("playbackVehicleBadge").textContent = seg.transport.icon;
+          document.getElementById("playbackLineBadge").textContent = `${seg.transport.icon} ${seg.transport.lineName}`;
+          document.getElementById("playbackLineBadge").style.backgroundColor = seg.transport.trackColor;
+          document.getElementById("playbackStepBadge").textContent = `D${seg.toSpot.day} • 區間 ${playbackCurrentSegIdx + 1} / ${playbackSegments.length} (${seg.distanceKm} km)`;
+          document.getElementById("playbackStatusText").textContent = `${shortenPlaceName(seg.fromSpot.name)} ➔ ${shortenPlaceName(seg.toSpot.name)}`;
+
+          // Highlight active destination card in sidebar
+          activeSpotId = seg.toSpot.id;
+          renderItinerary();
+          const cardEl = document.querySelector(`.spot-card[data-id="${seg.toSpot.id}"]`);
+          if (cardEl && window.innerWidth >= 640) {
+            cardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        }
+
+        // Station-to-station ease-in-out acceleration/deceleration + brief dwell at station
+        const dwellMs = 550;
+        const moveDurationMs = seg.baseDurationMs;
+        const totalSegMs = moveDurationMs + dwellMs;
+
+        const rawMoveRatio = Math.min(1, playbackSegElapsedMs / moveDurationMs);
+        const easedRatio = easeInOutSine(rawMoveRatio);
+        const pos = interpolateAlongCoords(seg.coords, easedRatio);
+
+        playbackVehicleMarker.setLatLng(pos);
+
+        // Update overall progress bar
+        const overallRatio = ((playbackCurrentSegIdx + rawMoveRatio) / playbackSegments.length) * 100;
+        const progBar = document.getElementById("playbackProgressBar");
+        if (progBar) progBar.style.width = `${Math.min(100, overallRatio).toFixed(1)}%`;
+
+        // Append to trail
+        if (playbackTrailLine) {
+          const trailPts = playbackTrailLine.getLatLngs();
+          trailPts.push(L.latLng(pos[0], pos[1]));
+          if (trailPts.length > 260) trailPts.shift();
+          playbackTrailLine.setLatLngs(trailPts);
+        }
+
+        // Camera Follow Lock (smooth pan to keep train/car centered)
+        if (isCameraFollowLocked && map) {
+          isProgrammaticPan = true;
+          map.panTo(pos, { animate: false });
+          isProgrammaticPan = false;
+        }
+
+        if (playbackSegElapsedMs >= totalSegMs) {
+          playbackCurrentSegIdx++;
+          playbackSegElapsedMs = 0;
+          if (playbackCurrentSegIdx >= playbackSegments.length) {
+            // Arrived at final station!
+            const finalSpot = seg.toSpot;
+            stopRoutePlayback(false);
+            activeSpotId = finalSpot.id;
+            updateStationPlateHud(finalSpot);
+            renderItinerary();
+            showToast(`🏁 已抵達終點站：${finalSpot.name}！`);
+            return;
+          }
+        }
+
+        playbackRafId = requestAnimationFrame(stepFrame);
+      };
+
+      playbackRafId = requestAnimationFrame(stepFrame);
+    }
+
+    function pauseResumePlayback() {
+      if (!isPlaybackRunning) return;
+      isPlaybackPaused = !isPlaybackPaused;
+      const btn = document.getElementById("playbackPauseBtn");
+      if (btn) btn.textContent = isPlaybackPaused ? "▶️" : "⏸";
+      showToast(isPlaybackPaused ? "⏸ 已暫停行程預演" : "▶️ 繼續行程預演");
+    }
+
+    function cyclePlaybackSpeed() {
+      const speeds = [1, 2, 4];
+      const next = speeds[(speeds.indexOf(playbackSpeedMultiplier) + 1) % speeds.length];
+      playbackSpeedMultiplier = next;
+      const btn = document.getElementById("playbackSpeedBtn");
+      if (btn) btn.textContent = `${next}x`;
+      showToast(`⚡ 預演倍速已調為 ${next}x`);
+    }
+
+    function recenterPlaybackFollow() {
+      if (!isPlaybackRunning || !playbackVehicleMarker) return;
+      isCameraFollowLocked = true;
+      document.getElementById("recenterFollowBtn")?.classList.add("hidden");
+      isProgrammaticPan = true;
+      map.flyTo(playbackVehicleMarker.getLatLng(), Math.max(map.getZoom(), 13), { duration: 0.5 });
+      setTimeout(() => { isProgrammaticPan = false; }, 550);
+    }
+
+    function stopRoutePlayback(showStopToast = true) {
+      isPlaybackRunning = false;
+      isPlaybackPaused = false;
+      if (playbackRafId) {
+        cancelAnimationFrame(playbackRafId);
+        playbackRafId = null;
+      }
+      if (playbackLayer) playbackLayer.clearLayers();
+      playbackVehicleMarker = null;
+      playbackTrailLine = null;
+
+      const hud = document.getElementById("playbackHud");
+      if (hud) hud.classList.add("hidden");
+
+      const toggleBtn = document.getElementById("playbackToggleBtn");
+      const toggleIcon = document.getElementById("playbackToggleIcon");
+      const toggleText = document.getElementById("playbackToggleText");
+      if (toggleBtn) {
+        toggleBtn.classList.remove("from-rose-500", "to-amber-600");
+        toggleBtn.classList.add("from-emerald-500", "to-teal-600");
+      }
+      if (toggleIcon) toggleIcon.textContent = "🚂";
+      if (toggleText) {
+        toggleText.textContent = currentFilter === "all" ? "預演 7 天動線" : `預演 D${currentFilter} 動線`;
+      }
+      if (showStopToast) {
+        showToast("⏹ 已結束動態跟車預演");
+      }
+    }
+
     // Initialize application
     window.addEventListener("DOMContentLoaded", () => {
+      // Load Font Size & Theme preferences
+      applyFontSizeSetting(localStorage.getItem(FONT_SIZE_KEY) || "normal");
+      applyThemeSetting(localStorage.getItem(THEME_KEY) || "light");
+
       loadData();
       initMap();
+      applyUrlDeepLink();
       renderAll(true);
 
       // Start Firebase Realtime Database
@@ -2073,13 +2876,29 @@
         btn.addEventListener("click", () => {
           const d = btn.getAttribute("data-jump-day");
           if (d) {
+            if (isPlaybackRunning) stopRoutePlayback(false);
             currentFilter = String(d);
             activeSpotId = null;
+            updateStationPlateHud(null);
+            syncUrlState();
             renderAll(true);
             showToast(`✨ 已切換至 D${d} 樂園行程！`);
           }
         });
       });
+
+      // Rail Island Inspired: Font Size, Night Theme, Deep-Link Share, Station HUD & Playback Listeners
+      document.getElementById("fontSizeBtn")?.addEventListener("click", cycleFontSize);
+      document.getElementById("themeToggleBtn")?.addEventListener("click", toggleDarkTheme);
+      document.getElementById("shareViewBtn")?.addEventListener("click", shareCurrentView);
+      document.getElementById("plateCloseBtn")?.addEventListener("click", () => {
+        updateStationPlateHud(null);
+      });
+      document.getElementById("playbackToggleBtn")?.addEventListener("click", startRoutePlayback);
+      document.getElementById("playbackPauseBtn")?.addEventListener("click", pauseResumePlayback);
+      document.getElementById("playbackSpeedBtn")?.addEventListener("click", cyclePlaybackSpeed);
+      document.getElementById("playbackStopBtn")?.addEventListener("click", () => stopRoutePlayback(true));
+      document.getElementById("recenterFollowBtn")?.addEventListener("click", recenterPlaybackFollow);
 
       // View Mode Switchers
       document.getElementById("viewModeSplitBtn").addEventListener("click", () => switchViewMode("split"));
@@ -2131,12 +2950,14 @@
       document.getElementById("spotForm").addEventListener("submit", (e) => {
         e.preventDefault();
         const id = document.getElementById("spotId").value;
+        const transportVal = document.getElementById("spotTransportMode")?.value || "auto";
         const spotData = {
           day: Number(document.getElementById("spotDay").value),
           name: document.getElementById("spotName").value.trim(),
           time: document.getElementById("spotTime").value.trim(),
           lat: parseFloat(document.getElementById("spotLat").value),
           lng: parseFloat(document.getElementById("spotLng").value),
+          transportMode: transportVal,
           notes: document.getElementById("spotNotes").value.trim(),
           transit: document.getElementById("spotTransit").value.trim()
         };
