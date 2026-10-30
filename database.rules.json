@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "tokyo_trip": {
+      "spots": { ".read": true, ".write": "auth != null" },
+      "startDate": { ".read": true, ".write": "auth != null" },
+      "handbookPrompt": { ".read": true, ".write": "auth != null" },
+      "lastUpdate": { ".read": true, ".write": "auth != null" },
+      "users": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    }
+  }
+}

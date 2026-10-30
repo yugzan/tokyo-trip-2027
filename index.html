@@ -10,6 +10,7 @@
   <!-- Firebase SDK (Compat Version) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <!-- SortableJS for Drag & Drop reordering on Desktop & Mobile -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -260,6 +261,11 @@
     </div>
 
     <div class="flex items-center gap-1.5 sm:gap-2 relative z-10 flex-wrap">
+      <!-- Google 登入（登入後才能修改行程） -->
+      <button id="authBtn" type="button" class="bg-white hover:bg-slate-100 text-slate-800 font-bold pl-1 pr-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 border-2 border-white shadow-sm transition" title="用 Google 帳號登入後才能修改行程">
+        <span id="authAvatar" class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden text-[11px]">G</span>
+        <span id="authLabel">登入</span>
+      </button>
       <!-- Sync Status Indicator -->
       <div id="syncBadge" class="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-black/20 backdrop-blur-sm border border-white/30 text-white">
         <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-300"></span>
@@ -786,9 +792,77 @@
     let startDateRef = null;
     let isInitialLoad = true;
 
-    // Auto Cloud Sync (Direct connection to asia-southeast1 Realtime Database — no API key needed)
+    // Auto Cloud Sync (asia-southeast1 Realtime Database) + Google 登入
     const DEFAULT_PROJECT_ID = "tokyo-trip-2027-fc2d6";
     const DEFAULT_DB_URL = "https://tokyo-trip-2027-fc2d6-default-rtdb.asia-southeast1.firebasedatabase.app";
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBus9RN2mnXyg09xZ7u7MEAeEhy6faiTWw", // 公開的 Firebase web key，安全由資料庫規則與 GCP 網域限制把關
+      authDomain: "tokyo-trip-2027-fc2d6.firebaseapp.com",
+      databaseURL: DEFAULT_DB_URL,
+      projectId: DEFAULT_PROJECT_ID,
+      storageBucket: "tokyo-trip-2027-fc2d6.firebasestorage.app",
+      messagingSenderId: "270028464612",
+      appId: "1:270028464612:web:437c3280648014ff9a67f1"
+    };
+    let currentUser = null;
+    let lastCloudSpots = null; // 最後一次雲端快照，未登入時用來還原誤改
+
+    function initAuth() {
+      const btn = document.getElementById("authBtn");
+      if (typeof firebase === "undefined" || !firebase.auth || !FIREBASE_CONFIG.apiKey) {
+        btn.addEventListener("click", () => showToast("⚠️ 尚未設定 Firebase apiKey，暫時無法登入"));
+        return;
+      }
+      const auth = firebase.auth();
+      btn.addEventListener("click", () => {
+        if (currentUser) {
+          if (confirm(`目前登入：${currentUser.email}\n要登出嗎？`)) auth.signOut();
+          return;
+        }
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch((err) => {
+          if (err.code !== "auth/popup-closed-by-user") showToast("登入失敗：" + err.code);
+        });
+      });
+      auth.onAuthStateChanged((user) => {
+        currentUser = user;
+        const avatar = document.getElementById("authAvatar");
+        const label = document.getElementById("authLabel");
+        if (user) {
+          avatar.innerHTML = user.photoURL ? `<img src="${user.photoURL}" alt="" class="w-5 h-5" referrerpolicy="no-referrer">` : "🙂";
+          label.textContent = (user.displayName || user.email).split(" ")[0];
+          btn.title = `已登入：${user.email}（點擊可登出）`;
+          // 登入紀錄：Firebase 主控台 → Realtime Database → tokyo_trip/users 可看到誰登入過
+          if (db) {
+            db.ref(`tokyo_trip/users/${user.uid}`).update({
+              email: user.email,
+              name: user.displayName || "",
+              lastLogin: firebase.database.ServerValue.TIMESTAMP
+            }).catch(() => {});
+          }
+        } else {
+          avatar.textContent = "G";
+          label.textContent = "登入";
+          btn.title = "用 Google 帳號登入後才能修改行程";
+        }
+      });
+    }
+
+    // 未登入時擋下雲端寫入；回傳 true 代表可以寫
+    function requireLogin() {
+      if (!db || currentUser) return true;
+      showToast("🔒 請先按右上角「登入」，用 Google 帳號登入後才能修改行程");
+      return false;
+    }
+
+    function recordLastUpdate(action) {
+      if (!db || !currentUser) return;
+      db.ref("tokyo_trip/lastUpdate").set({
+        by: currentUser.displayName || "家人",
+        uid: currentUser.uid,
+        action: action || "",
+        at: firebase.database.ServerValue.TIMESTAMP
+      }).catch(() => {});
+    }
 
     function renderAll(fitMapBounds = true) {
       refreshDaysConfigFromDate(tripStartDate);
@@ -802,10 +876,9 @@
       try {
         if (typeof firebase !== "undefined") {
           if (!firebase.apps.length) {
-            firebase.initializeApp({
-              databaseURL: DEFAULT_DB_URL,
-              projectId: DEFAULT_PROJECT_ID
-            });
+            const config = { ...FIREBASE_CONFIG };
+            if (!config.apiKey) delete config.apiKey;
+            firebase.initializeApp(config);
           }
           db = firebase.database();
           spotsRef = db.ref("tokyo_trip/spots");
@@ -826,6 +899,7 @@
             const data = snapshot.val();
             updateSyncStatus("online", "雲端即時同步");
             if (data && Array.isArray(data) && data.length > 0) {
+              lastCloudSpots = JSON.parse(JSON.stringify(data));
               spots = data;
               const upgraded = upgradeLegacyRentalSpots(spots);
               try { localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots)); } catch(e){}
@@ -890,6 +964,11 @@
 
     function saveStartDate(newDateStr) {
       if (!newDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(newDateStr)) return;
+      if (!requireLogin()) {
+        const input = document.getElementById("startDateInput");
+        if (input) input.value = tripStartDate;
+        return;
+      }
       tripStartDate = newDateStr;
       try { localStorage.setItem("tokyo_trip_start_date", tripStartDate); } catch(e){}
       if (startDateRef) {
@@ -900,6 +979,13 @@
     }
 
     function saveData(actionMsg) {
+      // 0. 未登入：還原成雲端最新版本，不寫入
+      if (!requireLogin()) {
+        if (lastCloudSpots) spots = JSON.parse(JSON.stringify(lastCloudSpots));
+        renderAll(false);
+        return;
+      }
+
       // 1. 本地儲存備份
       try {
         localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots));
@@ -910,6 +996,7 @@
         updateSyncStatus("saving", "同步上傳中...");
         spotsRef.set(spots).then(() => {
           updateSyncStatus("online", "雲端即時同步中");
+          recordLastUpdate(actionMsg);
           if (actionMsg) showToast(actionMsg);
         }).catch((err) => {
           console.error("Firebase save failed:", err);
@@ -3088,6 +3175,7 @@
 
     function saveHandbookPrompt() {
       const text = document.getElementById("promptEditor").value;
+      if (!requireLogin()) return;
       try { localStorage.setItem(HANDBOOK_PROMPT_KEY, text); } catch (e) {}
       if (handbookPromptRef) {
         handbookPromptRef.set(text).then(() => {
@@ -3141,6 +3229,7 @@
 
       // Start Firebase Realtime Database
       initFirebase();
+      initAuth();
       initHandbookPromptSync();
 
       // 📋 Trip JSON & 🌸 Handbook Prompt Listeners
