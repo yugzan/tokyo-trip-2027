@@ -207,10 +207,10 @@
         <!-- Place Search & Map Picker -->
         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
           <label class="block text-xs font-bold text-slate-700">
-            🔍 搜尋地點定位
+            🔍 搜尋地點定位（支援輸入地名、日本門牌地址、或直接貼上 Google Maps 網址）
           </label>
           <div class="flex gap-1.5 relative">
-            <input type="text" id="placeSearchInput" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white" placeholder="輸入景點、餐廳或飯店名稱（如：淺草寺、澀谷SKY）">
+            <input type="text" id="placeSearchInput" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white" placeholder="輸入景點名稱、日本地址，或直接貼上 Google Maps 網址">
             <button type="button" id="placeSearchBtn" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs whitespace-nowrap shadow-sm transition">
               搜尋
             </button>
@@ -349,37 +349,42 @@
       { id: "s11", day: 4, name: "續住上野飯店 (不換房)", time: "傍晚返回", lat: 35.714167, lng: 139.777400, notes: "免搬家，養精蓄銳準備隔天河口湖" },
 
       { id: "s12", day: 5, name: "新宿車站 (搭乘富士回遊)", time: "08:30", lat: 35.689600, lng: 139.700600, notes: "上野搭山手線到新宿，搭直達特急免換車" },
-      { id: "s13", day: 5, name: "Toyota Rent a Car 河口湖店 (取車)", time: "10:30", lat: 35.497500, lng: 138.763600, notes: "Toyota 租車河口湖店取車自駕（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/", transit: "河口湖站出站->步行或接駁至 Toyota 富士河口湖店取車" },
+      { id: "s13", day: 5, name: "Toyota Rent a Car 富士河口湖店 (取車)", time: "10:30", lat: 35.497707, lng: 138.772818, notes: "山梨県南都留郡富士河口湖町船津4657（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/", transit: "河口湖站出站->沿國道137號步行約7分鐘（ENEOS加油站旁）至トヨタレンタカー富士河口湖店取車" },
       { id: "s14", day: 5, name: "河口湖天上山纜車 & 遊覽船", time: "11:30~14:00", lat: 35.503600, lng: 138.772500, notes: "眺望富士山美景，人潮多需預留排隊時間" },
       { id: "s15", day: 5, name: "富士 SUBARU 樂園", time: "14:30~17:00", lat: 35.441800, lng: 138.752300, notes: "森林探索戶外園區，大人小孩狗狗都適合" },
       { id: "s16", day: 5, name: "河口湖溫泉旅館 (住宿)", time: "傍晚入住", lat: 35.508500, lng: 138.765000, notes: "一泊二食享受富士山景色" },
 
-      { id: "s17", day: 6, name: "Toyota Rent a Car 御殿場還車 & 回東京", time: "11:30~14:00", lat: 35.299500, lng: 138.935500, notes: "從河口湖自駕至御殿場站前店甲租乙還（可順遊御殿場 Outlet），再搭車返回東京", transit: "河口湖自駕->東富士五湖道路->Toyota 御殿場駅前店還車->搭高速巴士或JR回東京/上野" },
+      { id: "s17", day: 6, name: "Toyota Rent a Car 御殿場駅前店 (還車 & 回東京)", time: "11:30~14:00", lat: 35.299198, lng: 138.932661, notes: "從河口湖自駕至御殿場站前店甲租乙還（静岡県御殿場市新橋1850-6，可順遊御殿場 Outlet），再搭車返回東京", transit: "河口湖自駕->東富士五湖道路->トヨタレンタカー御殿場駅前店還車->搭高速巴士或JR回東京/上野" },
       { id: "s18", day: 6, name: "上野市區最後採買", time: "15:30~20:00", lat: 35.711500, lng: 139.774700, notes: "入住上野，集中在阿美橫町、多慶屋採購" },
 
       { id: "s19", day: 7, name: "阿美橫町晨間最後補貨", time: "10:00~11:30", lat: 35.711500, lng: 139.774700, notes: "藥妝與零食最後打包" },
       { id: "s20", day: 7, name: "出發成田機場 (15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "搭乘 Skyliner 直達成田，13:10前抵達櫃檯" }
     ];
 
-    // Auto-upgrade legacy default rental spots (s13 & s17) if unchanged by user
+    // Auto-upgrade legacy default rental spots (s13 & s17) or mislocated Kawaguchiko Toyota Rent a Car
     function upgradeLegacyRentalSpots(list) {
       let changed = false;
       list.forEach(item => {
-        if (item.id === "s13" && item.name === "河口湖站租車取車") {
-          item.name = "Toyota Rent a Car 河口湖店 (取車)";
-          item.lat = 35.497500;
-          item.lng = 138.763600;
-          item.notes = "Toyota 租車河口湖店取車自駕（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/";
-          item.transit = "河口湖站出站->步行或接駁至 Toyota 富士河口湖店取車";
+        const isKawaguchikoToyota = item.id === "s13" || /トヨタレンタカー.*河口湖|Toyota.*河口湖/i.test(item.name || "");
+        if (isKawaguchikoToyota && (Math.abs(item.lng - 138.772818) > 0.001 || item.name === "河口湖站租車取車")) {
+          if (item.name === "河口湖站租車取車" || item.name === "Toyota Rent a Car 河口湖店 (取車)") {
+            item.name = "Toyota Rent a Car 富士河口湖店 (取車)";
+          }
+          item.lat = 35.497707;
+          item.lng = 138.772818;
+          if (!item.notes || item.notes.includes("避開市區塞車") || item.notes.includes("Toyota 租車河口湖店取車自駕")) {
+            item.notes = "山梨県南都留郡富士河口湖町船津4657（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/";
+            item.transit = "河口湖站出站->沿國道137號步行約7分鐘（ENEOS加油站旁）至トヨタレンタカー富士河口湖店取車";
+          }
           changed = true;
         }
-        if (item.id === "s17" && item.name === "河口湖還車 & 搭車回東京") {
-          item.name = "Toyota Rent a Car 御殿場還車 & 回東京";
+        if (item.id === "s17" && (item.name === "河口湖還車 & 搭車回東京" || Math.abs(item.lng - 138.932661) > 0.001)) {
+          item.name = "Toyota Rent a Car 御殿場駅前店 (還車 & 回東京)";
           item.time = "11:30~14:00";
-          item.lat = 35.299500;
-          item.lng = 138.935500;
-          item.notes = "從河口湖自駕至御殿場站前店甲租乙還（可順遊御殿場 Outlet），再搭車返回東京";
-          item.transit = "河口湖自駕->東富士五湖道路->Toyota 御殿場駅前店還車->搭高速巴士或JR回東京/上野";
+          item.lat = 35.299198;
+          item.lng = 138.932661;
+          item.notes = "從河口湖自駕至御殿場站前店甲租乙還（静岡県御殿場市新橋1850-6，可順遊御殿場 Outlet），再搭車返回東京";
+          item.transit = "河口湖自駕->東富士五湖道路->トヨタレンタカー御殿場駅前店還車->搭高速巴士或JR回東京/上野";
           changed = true;
         }
       });
@@ -1491,9 +1496,10 @@
       { name: "新倉山淺間公園 (忠靈塔・五重塔)", address: "山梨縣富士吉田市淺間2-4-1", lat: 35.501241, lng: 138.800051, keywords: "新倉山淺間公園 下吉田 忠靈塔 五重塔 富士山" },
       { name: "忍野八海", address: "山梨縣南都留郡忍野村忍草", lat: 35.460053, lng: 138.832761, keywords: "忍野八海 富士山 河口湖" },
       { name: "富士急樂園 (湯瑪士小火車樂園)", address: "山梨縣富士吉田市新西原5-6-1", lat: 35.486764, lng: 138.780511, keywords: "富士急樂園 湯瑪士小火車 河口湖" },
-      { name: "Toyota Rent a Car 富士河口湖店", address: "山梨縣南都留郡富士河口湖町船津4657-4", lat: 35.497500, lng: 138.763600, keywords: "toyota rent a car 河口湖 租車 取車" },
-      { name: "Toyota Rent a Car 御殿場站前店", address: "靜岡縣御殿場市新橋1946-6", lat: 35.299500, lng: 138.935500, keywords: "toyota rent a car 御殿場 域電廠 租車 還車 gotemba" },
+      { name: "Toyota Rent a Car 富士河口湖店 (トヨタレンタカー富士河口湖)", address: "〒401-0301 山梨県南都留郡富士河口湖町船津4657 (4657 Funatsu)", lat: 35.497707, lng: 138.772818, keywords: "toyota rent a car トヨタレンタカー富士河口湖 4657 funatsu fujikawaguchiko 河口湖 租車 取車 船津4657" },
+      { name: "Toyota Rent a Car 御殿場駅前店 (トヨタレンタカー御殿場駅前)", address: "静岡県御殿場市新橋1850-6", lat: 35.299198, lng: 138.932661, keywords: "toyota rent a car トヨタレンタカー御殿場駅前 御殿場 域電廠 租車 還車 gotemba" },
       { name: "御殿場 Premium Outlets", address: "靜岡縣御殿場市深澤1312", lat: 35.306900, lng: 138.966000, keywords: "御殿場 outlet 域電廠 gotemba 購物 富士山" },
+      { name: "PokéPark Kanto (京王讀賣樂園)", address: "東京都稻城市矢野口4015-1", lat: 35.624628, lng: 139.517325, keywords: "pokepark kanto 寶可夢 讀賣樂園 よみうりランド" },
       { name: "成田國際機場 (NRT)", address: "千葉縣成田市古込1-1", lat: 35.771986, lng: 140.392850, keywords: "成田機場 narita airport nrt" },
       { name: "東京羽田國際機場 (HND)", address: "東京都大田區羽田空港", lat: 35.549393, lng: 139.779839, keywords: "羽田機場 haneda airport hnd" }
     ];
@@ -1543,7 +1549,7 @@
       document.getElementById("spotLng").value = fLng;
       const label = document.getElementById("coordPreviewLabel");
       if (label) {
-        label.textContent = `📍 ${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+        label.textContent = `📍 ${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
       }
     }
 
@@ -1553,7 +1559,7 @@
       setModalCoordinates(numLat, numLng);
 
       if (pickerMap && pickerMarker) {
-        pickerMap.flyTo([numLat, numLng], 15, { duration: 0.6 });
+        pickerMap.flyTo([numLat, numLng], 16, { duration: 0.6 });
         pickerMarker.setLatLng([numLat, numLng]);
       }
 
@@ -1563,7 +1569,31 @@
       }
 
       document.getElementById("searchResultsBox").classList.add("hidden");
-      showToast(`📍 已自動定位：${name}`);
+      showToast(`📍 已精準定位：${name}`);
+    }
+
+    // Parse Google Maps URL or raw "lat, lng" string if user pastes directly from Google Maps
+    function tryParseGoogleMapsInput(input) {
+      // 1. Match !3dLAT!4dLNG (exact pin coordinate in Google Maps URL)
+      const pinMatch = input.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      if (pinMatch) {
+        const placeNameMatch = input.match(/\/place\/([^/@]+)/);
+        const decodedName = placeNameMatch ? decodeURIComponent(placeNameMatch[1].replace(/\+/g, " ")) : "Google Maps 選取地點";
+        return { name: decodedName, lat: parseFloat(pinMatch[1]), lng: parseFloat(pinMatch[2]) };
+      }
+      // 2. Match @LAT,LNG in Google Maps URL
+      const atMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (atMatch) {
+        const placeNameMatch = input.match(/\/place\/([^/@]+)/);
+        const decodedName = placeNameMatch ? decodeURIComponent(placeNameMatch[1].replace(/\+/g, " ")) : "Google Maps 選取地點";
+        return { name: decodedName, lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+      }
+      // 3. Match direct coordinate pair like "35.497707, 138.772818"
+      const coordMatch = input.match(/^\s*(-?\d{2}\.\d+)\s*[,，\s]\s*(-?\d{2,3}\.\d+)\s*$/);
+      if (coordMatch) {
+        return { name: document.getElementById("spotName").value.trim() || "自訂座標地點", lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]) };
+      }
+      return null;
     }
 
     async function performPlaceSearch() {
@@ -1576,6 +1606,13 @@
         return;
       }
 
+      // 0. Instant check: Did user paste a Google Maps URL or exact coordinates?
+      const gmapParsed = tryParseGoogleMapsInput(query);
+      if (gmapParsed) {
+        selectSearchResult(gmapParsed.name, gmapParsed.lat, gmapParsed.lng);
+        return;
+      }
+
       const qLower = query.toLowerCase();
       // 1. First match built-in popular Tokyo landmarks
       const localMatches = TOKYO_PRESETS.filter(p =>
@@ -1585,45 +1622,69 @@
       );
 
       resultsBox.classList.remove("hidden");
-      resultsBox.innerHTML = `<div class="p-2.5 text-slate-500 flex items-center gap-2"><span>⏳</span> 正在查詢「${query}」的地圖位置...</div>`;
+      resultsBox.innerHTML = `<div class="p-2.5 text-slate-500 flex items-center gap-2"><span>⏳</span> 正在查詢「${query}」的精準位置...</div>`;
       if (searchBtn) searchBtn.textContent = "查詢中...";
 
+      let gsiMatches = [];
       let apiMatches = [];
       try {
-        // Query OpenStreetMap Nominatim (prioritize Japan)
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=6&accept-language=zh-TW,ja`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          apiMatches = data.map(item => {
-            const parts = item.display_name.split(",").map(s => s.trim());
-            const shortName = item.name || parts[0] || query;
-            const subAddr = parts.slice(1, 4).join(", ");
-            return {
-              name: shortName,
-              address: subAddr || item.display_name,
-              lat: parseFloat(item.lat),
-              lng: parseFloat(item.lon),
-              source: "map"
-            };
-          });
-        }
+        // Normalize English/Japanese address noise (e.g. "日本", postal codes) for better geocoding
+        const cleanQuery = query.replace(/〒?\d{3}-\d{4}/g, "").replace(/日本$/g, "").trim();
+
+        // Engine A: Japan GSI (國土地理院) Official Address Search — ultra-accurate for Japanese street/banchi numbers
+        const gsiPromise = fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(cleanQuery)}`)
+          .then(r => r.ok ? r.json() : [])
+          .then(data => {
+            if (Array.isArray(data)) {
+              gsiMatches = data.slice(0, 4).map(item => ({
+                name: item.properties?.title || cleanQuery,
+                address: `日本國土地理院精準門牌定位：${item.properties?.title || ""}`,
+                lat: parseFloat(item.geometry.coordinates[1]),
+                lng: parseFloat(item.geometry.coordinates[0]),
+                source: "gsi"
+              }));
+            }
+          }).catch(() => {});
+
+        // Engine B: OpenStreetMap Nominatim
+        const nomPromise = fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&countrycodes=jp&limit=6&accept-language=zh-TW,ja`)
+          .then(r => r.ok ? r.json() : [])
+          .then(data => {
+            if (Array.isArray(data)) {
+              apiMatches = data.map(item => {
+                const parts = item.display_name.split(",").map(s => s.trim());
+                const shortName = item.name || parts[0] || cleanQuery;
+                const subAddr = parts.slice(1, 4).join(", ");
+                return {
+                  name: shortName,
+                  address: subAddr || item.display_name,
+                  lat: parseFloat(item.lat),
+                  lng: parseFloat(item.lon),
+                  source: "map"
+                };
+              });
+            }
+          }).catch(() => {});
+
+        await Promise.all([gsiPromise, nomPromise]);
       } catch (err) {
-        console.warn("Nominatim search error:", err);
+        console.warn("Search error:", err);
       } finally {
-        if (searchBtn) searchBtn.textContent = "搜尋地點";
+        if (searchBtn) searchBtn.textContent = "搜尋";
       }
 
-      // Combine local matches + API matches (avoid duplicates)
+      // Combine local matches + GSI matches + OSM matches (avoid duplicates)
       const combined = [
         ...localMatches.map(m => ({ ...m, source: "hot" })),
-        ...apiMatches.filter(a => !localMatches.some(l => Math.abs(l.lat - a.lat) < 0.002 && Math.abs(l.lng - a.lng) < 0.002))
+        ...gsiMatches.filter(g => !localMatches.some(l => Math.abs(l.lat - g.lat) < 0.001 && Math.abs(l.lng - g.lng) < 0.001)),
+        ...apiMatches.filter(a => !localMatches.some(l => Math.abs(l.lat - a.lat) < 0.001 && Math.abs(l.lng - a.lng) < 0.001))
       ];
 
       if (combined.length === 0) {
         resultsBox.innerHTML = `
-          <div class="p-3 text-slate-500 text-center">
-            找不到「${query}」，建議試試更簡短的名稱（例如：淺草寺、新宿、晴空塔），或直接點擊下方小地圖選點。
+          <div class="p-3 text-slate-600 text-xs space-y-1.5">
+            <div class="font-bold text-slate-700">找不到「${query}」的對應門牌</div>
+            <div>💡 <b>小撇步</b>：您可以直接從 Google Maps 複製<b>「網址列連結」</b>或<b>「經緯度座標」</b>貼進上方搜尋框，即可 100% 精準定位！</div>
           </div>
         `;
         return;
@@ -1635,7 +1696,8 @@
             <div class="font-bold text-slate-800 flex items-center gap-1.5">
               <span>📍</span>
               <span>${item.name}</span>
-              ${item.source === "hot" ? '<span class="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-bold">熱門地標</span>' : ''}
+              ${item.source === "hot" ? '<span class="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-bold">精準地標</span>' : ''}
+              ${item.source === "gsi" ? '<span class="text-[10px] px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded font-bold">日本官方門牌</span>' : ''}
             </div>
             <div class="text-[11px] text-slate-500 mt-0.5 pl-5 line-clamp-1">${item.address}</div>
           </div>
