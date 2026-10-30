@@ -2613,6 +2613,11 @@
       return -(Math.cos(Math.PI * x) - 1) / 2;
     }
 
+    function setPbText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+
     async function startRoutePlayback() {
       if (isPlaybackRunning) {
         stopRoutePlayback(true);
@@ -2653,27 +2658,41 @@
       if (hud) hud.classList.remove("hidden");
       if (stationHud) stationHud.classList.add("hidden");
       document.getElementById("recenterFollowBtn")?.classList.add("hidden");
-      document.getElementById("playbackPauseBtn").textContent = "⏸";
+      setPbText("pbPauseResumeBtn", "⏸️ 暫停");
+      setPbText("pbSpeedBtn", `${playbackSpeedMultiplier}× 速度`);
+      setPbText("pbStatusTitle", "行程動線預演中...");
+      setPbText("pbSegmentSubtitle", "準備出發...");
+      const progBar0 = document.getElementById("pbProgressBar");
+      if (progBar0) progBar0.style.width = "0%";
 
-      // Build segments with OSRM geometry
-      document.getElementById("playbackStatusText").textContent = "正在載入軌道與公路幾何路線...";
+      // Build segments instantly (cached road geometry or straight line), then upgrade to real road geometry in background
       playbackSegments = [];
       for (let i = 0; i < targetSpots.length - 1; i++) {
-        if (!isPlaybackRunning) return;
         const fromSpot = targetSpots[i];
         const toSpot = targetSpots[i + 1];
         const transport = classifySegmentTransport(fromSpot, toSpot);
-        const roadSeg = await fetchRoadSegmentGeometry(fromSpot, toSpot);
-        playbackSegments.push({
+        const cacheKey = getRouteCacheKey(fromSpot.lat, fromSpot.lng, toSpot.lat, toSpot.lng);
+        const cached = routeGeometryCache[cacheKey];
+        const directKm = calcDirectDistanceKm(fromSpot.lat, fromSpot.lng, toSpot.lat, toSpot.lng);
+        const distKm = cached ? Number(cached.distanceKm) : directKm * 1.25;
+        const seg = {
           index: i,
           fromSpot,
           toSpot,
           transport,
-          coords: roadSeg.coords,
-          distanceKm: roadSeg.distanceKm,
-          durationMin: roadSeg.durationMin,
-          baseDurationMs: Math.max(2600, Math.min(4800, Number(roadSeg.distanceKm) * 140 + 2400))
-        });
+          coords: cached?.coords || [[fromSpot.lat, fromSpot.lng], [toSpot.lat, toSpot.lng]],
+          distanceKm: distKm.toFixed(1),
+          baseDurationMs: Math.max(2600, Math.min(4800, distKm * 140 + 2400))
+        };
+        playbackSegments.push(seg);
+        if (!cached && transport.mode !== "walk") {
+          fetchRoadSegmentGeometry(fromSpot, toSpot).then(r => {
+            if (r && r.coords && r.coords.length >= 2) {
+              seg.coords = r.coords;
+              seg.distanceKm = r.distanceKm;
+            }
+          }).catch(() => {});
+        }
       }
 
       if (!isPlaybackRunning || playbackSegments.length === 0) return;
@@ -2738,11 +2757,10 @@
         if (lastRenderedSegIdx !== playbackCurrentSegIdx) {
           lastRenderedSegIdx = playbackCurrentSegIdx;
           playbackVehicleMarker.setIcon(createVehicleDivIcon(seg));
-          document.getElementById("playbackVehicleBadge").textContent = seg.transport.icon;
-          document.getElementById("playbackLineBadge").textContent = `${seg.transport.icon} ${seg.transport.lineName}`;
-          document.getElementById("playbackLineBadge").style.backgroundColor = seg.transport.trackColor;
-          document.getElementById("playbackStepBadge").textContent = `D${seg.toSpot.day} • 區間 ${playbackCurrentSegIdx + 1} / ${playbackSegments.length} (${seg.distanceKm} km)`;
-          document.getElementById("playbackStatusText").textContent = `${shortenPlaceName(seg.fromSpot.name)} ➔ ${shortenPlaceName(seg.toSpot.name)}`;
+          setPbText("pbVehicleBadge", seg.transport.icon);
+          setPbText("pbStatusTitle", `D${seg.toSpot.day} • ${seg.transport.lineName}`);
+          setPbText("pbDistanceLabel", `${playbackCurrentSegIdx + 1}/${playbackSegments.length} • ${seg.distanceKm} km`);
+          setPbText("pbSegmentSubtitle", `${shortenPlaceName(seg.fromSpot.name)} ➔ ${shortenPlaceName(seg.toSpot.name)}`);
 
           // Highlight active destination card in sidebar
           activeSpotId = seg.toSpot.id;
@@ -2766,7 +2784,7 @@
 
         // Update overall progress bar
         const overallRatio = ((playbackCurrentSegIdx + rawMoveRatio) / playbackSegments.length) * 100;
-        const progBar = document.getElementById("playbackProgressBar");
+        const progBar = document.getElementById("pbProgressBar");
         if (progBar) progBar.style.width = `${Math.min(100, overallRatio).toFixed(1)}%`;
 
         // Append to trail
@@ -2808,8 +2826,7 @@
     function pauseResumePlayback() {
       if (!isPlaybackRunning) return;
       isPlaybackPaused = !isPlaybackPaused;
-      const btn = document.getElementById("playbackPauseBtn");
-      if (btn) btn.textContent = isPlaybackPaused ? "▶️" : "⏸";
+      setPbText("pbPauseResumeBtn", isPlaybackPaused ? "▶️ 繼續" : "⏸️ 暫停");
       showToast(isPlaybackPaused ? "⏸ 已暫停行程預演" : "▶️ 繼續行程預演");
     }
 
@@ -2817,8 +2834,7 @@
       const speeds = [1, 2, 4];
       const next = speeds[(speeds.indexOf(playbackSpeedMultiplier) + 1) % speeds.length];
       playbackSpeedMultiplier = next;
-      const btn = document.getElementById("playbackSpeedBtn");
-      if (btn) btn.textContent = `${next}x`;
+      setPbText("pbSpeedBtn", `${next}× 速度`);
       showToast(`⚡ 預演倍速已調為 ${next}x`);
     }
 
@@ -2904,9 +2920,9 @@
         updateStationPlateHud(null);
       });
       document.getElementById("playbackToggleBtn")?.addEventListener("click", startRoutePlayback);
-      document.getElementById("playbackPauseBtn")?.addEventListener("click", pauseResumePlayback);
-      document.getElementById("playbackSpeedBtn")?.addEventListener("click", cyclePlaybackSpeed);
-      document.getElementById("playbackStopBtn")?.addEventListener("click", () => stopRoutePlayback(true));
+      document.getElementById("pbPauseResumeBtn")?.addEventListener("click", pauseResumePlayback);
+      document.getElementById("pbSpeedBtn")?.addEventListener("click", cyclePlaybackSpeed);
+      document.getElementById("pbStopBtn")?.addEventListener("click", () => stopRoutePlayback(true));
       document.getElementById("recenterFollowBtn")?.addEventListener("click", recenterPlaybackFollow);
 
       // View Mode Switchers
