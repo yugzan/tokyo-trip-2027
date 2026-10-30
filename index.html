@@ -866,13 +866,22 @@
       }, 2500);
     }
 
+    const FONT_SIZE_KEY = "tokyo_trip_font_size";
+    const THEME_KEY = "tokyo_trip_theme";
+
     let playbackLayer = null;
     let isPlaybackRunning = false;
     let isPlaybackPaused = false;
-    let isPlaybackFollowing = true;
+    let isCameraFollowLocked = true;
     let isProgrammaticPan = false;
     let playbackSpeedMultiplier = 1;
-    let playbackAnimFrameId = null;
+    let playbackRafId = null;
+    let playbackSegments = [];
+    let playbackCurrentSegIdx = 0;
+    let playbackSegElapsedMs = 0;
+    let playbackLastTimestamp = null;
+    let playbackTrailLine = null;
+    let playbackVehicleMarker = null;
 
     // Init Leaflet Map
     function initMap() {
@@ -890,7 +899,7 @@
       // Rail Island / Google Nav style: detach camera follow if user drags map during playback
       map.on("dragstart", () => {
         if (isPlaybackRunning && !isProgrammaticPan) {
-          isPlaybackFollowing = false;
+          isCameraFollowLocked = false;
           const recenterBtn = document.getElementById("recenterFollowBtn");
           if (recenterBtn) recenterBtn.classList.remove("hidden");
         }
