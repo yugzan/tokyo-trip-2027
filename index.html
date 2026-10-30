@@ -280,9 +280,13 @@
         <span>🔗</span>
         <span class="hidden sm:inline">分享畫面</span>
       </button>
-      <button id="addSpotBtn" class="bg-amber-300 hover:bg-amber-400 text-slate-900 font-extrabold px-3.5 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 shadow-md border-2 border-white transition hover:scale-105">
-        <span>➕</span> 新增景點
-      </button>
+      <!-- 旅のしおり：瀏覽 / 下載手冊 -->
+      <a id="viewShioriBtn" href="shiori.html" target="_blank" rel="noopener" class="bg-amber-300 hover:bg-amber-400 text-slate-900 font-extrabold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border-2 border-white shadow-sm transition" title="開啟旅のしおり（可 Ctrl+P 另存 PDF）">
+        <span>📖</span> <span class="hidden sm:inline">旅遊手冊</span>
+      </a>
+      <a id="downloadShioriBtn" href="shiori.html" download="2027東京親子旅のしおり.html" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="下載旅遊手冊網頁檔（離線可開）">
+        <span>⬇️</span> <span class="hidden md:inline">下載手冊</span>
+      </a>
       <button id="exportCsvBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="匯出相容 Google My Maps 的 CSV">
         <span>📥</span> <span class="hidden md:inline">匯出地圖檔</span>
       </button>
@@ -3219,7 +3223,6 @@
       document.getElementById("viewModeTableBtn").addEventListener("click", () => switchViewMode("table"));
 
       // UI Listeners
-      document.getElementById("addSpotBtn").addEventListener("click", () => openModalForNew());
       document.getElementById("tableAddSpotBtn")?.addEventListener("click", () => openModalForNew());
       document.getElementById("closeModalBtn").addEventListener("click", closeModal);
       document.getElementById("cancelModalBtn").addEventListener("click", closeModal);

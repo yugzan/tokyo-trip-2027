@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅のしおり｜2027 東京家族親子冒險之旅</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  :root {
+    --paper: #FFFBF5;
+    --ink: #4A3F3A;
+    --ink-soft: #8A7D74;
+    --line: #EADFD2;
+    --pink: #F9C6D3;
+    --mint: #BFE8D6;
+    --sky: #BFDDF7;
+    --lemon: #FCE9A6;
+    --lilac: #DCCFF5;
+    --peach: #FFD3B6;
+  }
+  body {
+    background: #CFCBC6;
+    font-family: "Zen Maru Gothic", "M PLUS Rounded 1c", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    color: var(--ink);
+    font-size: 10.5pt;
+    line-height: 1.5;
+    padding: 10mm 0;
+  }
+
+  /* ───── 頁面 ───── */
+  .page {
+    width: 210mm;
+    height: 297mm;
+    padding: 12mm;
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+    position: relative;
+    margin: 0 auto 10mm;
+    background-color: var(--paper);
+    background-image: radial-gradient(circle, #EBDDCB 0.9px, transparent 1.2px);
+    background-size: 6mm 6mm;
+    background-position: 3mm 3mm;
+    box-shadow: 0 6px 24px rgba(60, 40, 30, .22);
+    display: flex;
+    flex-direction: column;
+  }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+  @media print {
+    body { background: none; padding: 0; }
+    .page { margin: 0; box-shadow: none; }
+  }
+
+  .rounded { font-family: "M PLUS Rounded 1c", "Zen Maru Gothic", sans-serif; }
+  .jp { font-size: 8pt; letter-spacing: .15em; color: var(--ink-soft); font-weight: 700; }
+  .pageno {
+    position: absolute; bottom: 5mm; left: 0; right: 0;
+    text-align: center; font-size: 8pt; color: var(--ink-soft); letter-spacing: .2em;
+  }
+
+  /* 紙膠帶 */
+  .tape {
+    position: absolute; height: 8mm; width: 36mm; opacity: .85;
+    background: repeating-linear-gradient(45deg, var(--t1) 0 2.5mm, var(--t2) 2.5mm 5mm);
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    clip-path: polygon(2% 0, 98% 4%, 100% 50%, 97% 100%, 1% 96%, 0 50%);
+  }
+  .tape.dots {
+    background: radial-gradient(circle, rgba(255,255,255,.85) 1.1px, transparent 1.4px) 0 0/3mm 3mm, var(--t1);
+  }
+
+  /* ───── 封面 ───── */
+  .cover { align-items: center; text-align: center; }
+  .cover .badge {
+    margin-top: 6mm;
+    display: inline-block; padding: 1.5mm 6mm; border-radius: 99px;
+    background: #fff; border: 2px dashed #F2A7B8; color: #E07A93;
+    font-weight: 700; letter-spacing: .3em; font-size: 10pt;
+  }
+  .cover h1 {
+    margin-top: 6mm;
+    font-family: "M PLUS Rounded 1c", sans-serif; font-weight: 800;
+    font-size: 34pt; line-height: 1.25; color: #5B4B8A;
+    text-shadow: 3px 3px 0 #FCE9A6;
+  }
+  .cover h1 small { display: block; font-size: 17pt; color: #E07A93; text-shadow: 2px 2px 0 #fff; }
+  .cover .sub {
+    margin-top: 4mm; font-size: 30pt; font-weight: 900; letter-spacing: .25em; color: #F08A5D;
+  }
+  .cover .dates {
+    margin-top: 3mm; display: inline-flex; gap: 3mm; align-items: center;
+    background: #fff; border-radius: 6mm; padding: 2mm 7mm;
+    box-shadow: 0 2px 0 var(--line); font-weight: 700; font-size: 13pt;
+  }
+  .cover .dates .arrow { color: #F2A7B8; }
+  .cover .art { margin-top: 8mm; width: 100%; border-radius: 8mm; overflow: hidden; box-shadow: 0 3px 0 var(--line); }
+  .cover .art svg { display: block; width: 100%; height: auto; }
+  .cover .tags { margin-top: 6mm; display: flex; gap: 2.5mm; justify-content: center; flex-wrap: wrap; }
+  .cover .tags span { padding: 1mm 4mm; border-radius: 99px; font-size: 9.5pt; font-weight: 700; }
+  .sign {
+    margin-top: auto; width: 100%; background: #fff; border-radius: 6mm;
+    border: 2px solid var(--line); padding: 4mm 6mm 5mm; text-align: left; position: relative;
+  }
+  .sign h3 { font-size: 11pt; margin-bottom: 2mm; }
+  .sign .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm 5mm; }
+  .sign .slot { text-align: center; }
+  .sign .face { font-size: 16pt; }
+  .sign .ln { border-bottom: 2px dotted #D9C9B8; height: 8mm; }
+  .sign .cap { font-size: 7.5pt; color: var(--ink-soft); margin-top: 1mm; }
+
+  /* ───── 總覽 ───── */
+  .ttl { position: relative; margin-bottom: 6mm; }
+  .ttl h2 { font-family: "M PLUS Rounded 1c", sans-serif; font-size: 22pt; font-weight: 800; }
+  .ttl h2 .hl { background: linear-gradient(transparent 60%, var(--lemon) 60%); padding: 0 1mm; }
+  .ov { display: flex; flex-direction: column; gap: 3.2mm; flex: 1; }
+  .ov-row {
+    display: grid; grid-template-columns: 22mm 1fr 24mm; align-items: stretch;
+    background: #fff; border-radius: 5mm; overflow: hidden;
+    border: 1.5px solid color-mix(in srgb, var(--c) 30%, #fff);
+    flex: 1; break-inside: avoid;
+  }
+  .ov-day {
+    background: color-mix(in srgb, var(--c) 22%, #fff);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: color-mix(in srgb, var(--c) 80%, #000);
+  }
+  .ov-day b { font-family: "M PLUS Rounded 1c"; font-size: 17pt; line-height: 1; font-weight: 800; }
+  .ov-day span { font-size: 8.5pt; font-weight: 700; margin-top: 1mm; }
+  .ov-main { padding: 2.5mm 4mm; display: flex; flex-direction: column; justify-content: center; }
+  .ov-main .theme { font-weight: 900; font-size: 12pt; color: color-mix(in srgb, var(--c) 75%, #000); }
+  .ov-main .spots { display: flex; flex-wrap: wrap; gap: 1.2mm; margin-top: 1.2mm; }
+  .ov-main .spots span {
+    font-size: 8pt; padding: .3mm 2.2mm; border-radius: 99px;
+    background: color-mix(in srgb, var(--c) 10%, #fff); border: 1px solid color-mix(in srgb, var(--c) 25%, #fff);
+  }
+  .ov-tr {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5mm;
+    font-size: 15pt; border-left: 2px dashed color-mix(in srgb, var(--c) 25%, #fff);
+  }
+  .legend { margin-top: 4mm; font-size: 8.5pt; color: var(--ink-soft); text-align: center; }
+
+  /* ───── 每日頁 ───── */
+  .day { --t1: color-mix(in srgb, var(--c) 35%, #fff); --t2: color-mix(in srgb, var(--c) 18%, #fff); }
+  .dh {
+    position: relative; border-radius: 7mm; padding: 6mm 7mm 5mm;
+    background: color-mix(in srgb, var(--c) 14%, #fff);
+    border: 2px solid color-mix(in srgb, var(--c) 30%, #fff);
+    display: flex; align-items: center; gap: 6mm; margin-top: 3mm;
+  }
+  .dh .num {
+    font-family: "M PLUS Rounded 1c"; font-weight: 800; line-height: .9;
+    color: var(--c); font-size: 15pt; text-align: center;
+  }
+  .dh .num b { display: block; font-size: 46pt; text-shadow: 3px 3px 0 #fff; }
+  .dh .info { flex: 1; }
+  .dh .date { font-weight: 700; color: var(--ink-soft); font-size: 11pt; }
+  .dh .theme { font-family: "M PLUS Rounded 1c"; font-weight: 800; font-size: 21pt; line-height: 1.25; color: color-mix(in srgb, var(--c) 70%, #000); }
+  .dh .count {
+    background: #fff; border-radius: 99px; padding: 1.5mm 4mm; font-size: 9pt; font-weight: 700;
+    color: color-mix(in srgb, var(--c) 75%, #000); border: 1.5px dashed color-mix(in srgb, var(--c) 40%, #fff);
+    white-space: nowrap;
+  }
+  .day .tape.a { top: -1mm; left: 14mm; transform: rotate(-5deg); }
+  .day .tape.b { top: -1.5mm; right: 18mm; transform: rotate(4deg); width: 26mm; }
+
+  .sec { display: flex; align-items: baseline; gap: 3mm; margin: 5mm 0 3mm; }
+  .sec h4 { font-size: 12pt; font-weight: 900; }
+  .sec .jp { color: var(--c); }
+  .sec::after { content: ""; flex: 1; border-bottom: 2px dashed color-mix(in srgb, var(--c) 30%, #fff); transform: translateY(-1.5mm); }
+
+  .tl { position: relative; padding-left: 9mm; display: flex; flex-direction: column; gap: 3.5mm; }
+  .tl::before {
+    content: ""; position: absolute; left: 3.2mm; top: 3mm; bottom: 3mm; width: 0;
+    border-left: 2.5px dotted color-mix(in srgb, var(--c) 55%, #fff);
+  }
+  .spot { position: relative; break-inside: avoid; page-break-inside: avoid; }
+  .spot::before {
+    content: ""; position: absolute; left: -7.6mm; top: 4mm; width: 3.4mm; height: 3.4mm; border-radius: 50%;
+    background: #fff; border: 2.5px solid var(--c);
+  }
+  .move {
+    display: inline-flex; align-items: center; gap: 1.5mm; font-size: 8.5pt; font-weight: 700;
+    color: color-mix(in srgb, var(--c) 70%, #000); background: #fff;
+    border: 1.5px solid color-mix(in srgb, var(--c) 30%, #fff);
+    border-radius: 99px; padding: .4mm 3mm; margin: 0 0 1.8mm -1mm;
+  }
+  .card {
+    background: #fff; border-radius: 4.5mm; padding: 3mm 4mm 3mm 3.5mm;
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--c) 20%, #fff), 0 0 0 1.5px color-mix(in srgb, var(--c) 16%, #fff);
+    display: grid; grid-template-columns: 6mm 1fr; gap: 3mm; align-items: start;
+  }
+  .chk {
+    width: 5.5mm; height: 5.5mm; border: 2px solid color-mix(in srgb, var(--c) 60%, #fff); border-radius: 1.4mm;
+    margin-top: .8mm; background: #fff;
+  }
+  .card .top { display: flex; align-items: center; gap: 2.5mm; flex-wrap: wrap; }
+  .time {
+    font-size: 9pt; font-weight: 700; color: #fff; background: var(--c);
+    border-radius: 99px; padding: .2mm 3mm; white-space: nowrap;
+  }
+  .opt { font-size: 8pt; font-weight: 900; color: var(--c); border: 1.5px solid var(--c); border-radius: 1.5mm; padding: 0 1.5mm; }
+  .card .name { font-weight: 900; font-size: 12.5pt; line-height: 1.35; margin-top: 1mm; }
+  .card .note { font-size: 9.5pt; color: #5F534C; margin-top: 1mm; }
+  .card .note::before { content: "✎ "; color: var(--c); }
+  .transit {
+    margin-top: 2mm; font-size: 8.8pt; line-height: 1.7; padding: 1.8mm 3mm; border-radius: 3mm;
+    background: color-mix(in srgb, var(--c) 8%, #fff); border-left: 3px solid color-mix(in srgb, var(--c) 45%, #fff);
+  }
+  .transit b { color: color-mix(in srgb, var(--c) 75%, #000); margin-right: 1mm; }
+  .transit .ar { color: var(--c); font-weight: 900; margin: 0 1mm; }
+  .link { margin-top: 1.2mm; font-size: 8pt; color: color-mix(in srgb, var(--c) 70%, #000); word-break: break-all; }
+
+  /* 精簡排版（景點 ≥ 6 或自動偵測溢出） */
+  .compact .dh { padding: 4mm 6mm 3.5mm; }
+  .compact .dh .num b { font-size: 36pt; }
+  .compact .dh .theme { font-size: 17pt; }
+  .compact .sec { margin: 3mm 0 2mm; }
+  .compact .tl { gap: 2mm; }
+  .compact .card { padding: 2mm 3mm; gap: 2.5mm; }
+  .compact .card .name { font-size: 11pt; margin-top: .4mm; }
+  .compact .card .note { font-size: 8.8pt; margin-top: .4mm; }
+  .compact .transit { margin-top: 1.2mm; padding: 1.2mm 2.5mm; font-size: 8.3pt; line-height: 1.55; }
+  .compact .move { margin-bottom: 1mm; font-size: 8pt; }
+  .compact .spot::before { top: 3mm; }
+  .tight .card { grid-template-columns: 5mm 1fr; padding: 1.5mm 2.5mm; }
+  .tight .chk { width: 4.5mm; height: 4.5mm; }
+  .tight .card .top { flex-wrap: nowrap; }
+  .tight .card .name { font-size: 10.5pt; }
+  .tight .card .note { font-size: 8.3pt; }
+  .tight .tl { gap: 1.4mm; }
+
+  /* 留白區 */
+  .fill { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-top: 4mm; gap: 3.5mm; padding-bottom: 4mm; }
+  .box {
+    background: #fff; border-radius: 5mm; padding: 3mm 4mm; position: relative;
+    border: 2px dashed color-mix(in srgb, var(--c) 35%, #fff); min-height: 0;
+    display: flex; flex-direction: column;
+  }
+  .box h5 { font-size: 10.5pt; font-weight: 900; display: flex; gap: 2mm; align-items: baseline; }
+  .box h5 .jp { font-size: 7.5pt; }
+  .lined {
+    flex: 1; margin-top: 1.5mm; min-height: 8mm;
+    background: repeating-linear-gradient(transparent 0 7.2mm, color-mix(in srgb, var(--c) 22%, #fff) 7.2mm 7.6mm);
+  }
+  .fill-row { display: grid; grid-template-columns: 1.55fr 1fr; gap: 3.5mm; flex: 1.5; min-height: 0; }
+  .photo .frame {
+    flex: 1; margin-top: 2mm; border-radius: 3mm; position: relative;
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--c) 6%, #fff) 0 4mm, #fff 4mm 8mm);
+    border: 1.5px solid color-mix(in srgb, var(--c) 20%, #fff);
+    display: flex; align-items: center; justify-content: center; color: #C9BCB0; font-size: 9pt;
+  }
+  .photo .frame .tape { --t1: var(--pink); width: 18mm; height: 6mm; }
+  .photo .frame .tape.l { top: -2mm; left: -3mm; transform: rotate(-35deg); }
+  .photo .frame .tape.r { bottom: -2mm; right: -3mm; transform: rotate(-35deg); --t1: var(--mint); }
+  .stamps .grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin-top: 2mm; place-items: center; }
+  .stamps .grid div {
+    width: 100%; aspect-ratio: 1; max-height: 100%; border-radius: 50%;
+    border: 2px dashed color-mix(in srgb, var(--c) 40%, #fff);
+    display: flex; align-items: center; justify-content: center; color: #D5C9BE; font-size: 7.5pt;
+  }
+  .food { flex: 1; }
+
+  /* ───── 附錄 ───── */
+  .apx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .panel { background: #fff; border-radius: 5mm; padding: 4mm 5mm; border: 2px solid var(--line); break-inside: avoid; }
+  .panel h3 { font-size: 11.5pt; font-weight: 900; margin-bottom: 2mm; display: flex; gap: 2mm; align-items: baseline; }
+  .panel h3 .dot { width: 3mm; height: 3mm; border-radius: 50%; display: inline-block; align-self: center; }
+  .ck { list-style: none; font-size: 9.5pt; }
+  .ck li { display: flex; gap: 2.5mm; align-items: flex-start; padding: 1.1mm 0; border-bottom: 1px dotted var(--line); }
+  .ck li:last-child { border-bottom: 0; }
+  .ck li::before { content: ""; flex: 0 0 4.2mm; height: 4.2mm; border: 1.8px solid #D7B9A6; border-radius: 1.2mm; margin-top: .6mm; background: #fff; }
+  .ck li small { color: var(--ink-soft); font-size: 8pt; display: block; }
+  .sos { margin-top: 4mm; }
+  .sos .tels { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 3mm; }
+  .tel { border-radius: 4mm; padding: 2.5mm 3.5mm; text-align: center; }
+  .tel b { display: block; font-family: "M PLUS Rounded 1c"; font-size: 22pt; line-height: 1.1; font-weight: 800; }
+  .tel span { font-size: 8.5pt; font-weight: 700; }
+  .tel.wide { text-align: left; }
+  .tel.wide b { font-size: 12.5pt; }
+  .tel.wide div { font-size: 8.5pt; line-height: 1.55; }
+  .fillin { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 6mm; margin-top: 3mm; font-size: 9pt; }
+  .fillin div { display: flex; gap: 2mm; align-items: flex-end; }
+  .fillin div span { white-space: nowrap; }
+  .fillin div i { flex: 1; border-bottom: 1.5px dotted #CDB8A6; height: 6mm; }
+  .tip { font-size: 7.5pt; color: var(--ink-soft); margin-top: 2mm; }
+  .jp-phrase { margin-top: 3mm; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 4mm; font-size: 8.8pt; }
+  .jp-phrase div b { font-weight: 700; }
+
+  .memo-page .paper {
+    flex: 1; background: #fff; border-radius: 6mm; border: 2px solid var(--line); position: relative;
+    background-image:
+      linear-gradient(#F3E8DC 1px, transparent 1px),
+      linear-gradient(90deg, #F3E8DC 1px, transparent 1px);
+    background-size: 5mm 5mm; background-position: 4mm 4mm;
+    margin-bottom: 4mm;
+  }
+</style>
+</head>
+<body>
+<div id="book"></div>
+
+<script>
+const DATA = {
+  "trip": "2027 東京家族親子之旅",
+  "startDate": "2027-03-17",
+  "totalDays": 7,
+  "days": [
+    { "day": 1, "date": "03/17", "weekday": "週三", "theme": "抵達 & 晴空塔", "themeColor": "#3B82F6", "spots": [
+      { "order": 1, "time": "12:35 降落", "name": "成田國際機場", "notes": "搭乘 Skyliner 直達上野 (約41~51分)", "transit": "", "transportFromPrev": "" },
+      { "order": 2, "time": "約 14:30", "name": "上野飯店 Check-in", "notes": "推薦住上野，放行李後輕裝出發", "transit": "", "transportFromPrev": "🚄 京成 Skyliner 特急" },
+      { "order": 3, "time": "16:00~20:00", "name": "東京晴空塔 & 墨田水族館", "notes": "晴空塔逛街＋墨田水族館+寶可夢中心，打烊約 21:00", "transit": "", "transportFromPrev": "🚇 東京メトロ銀座線/淺草線" }
+    ]},
+    { "day": 2, "date": "03/18", "weekday": "週四", "theme": "迪士尼海洋", "themeColor": "#EC4899", "spots": [
+      { "order": 1, "time": "08:30~21:00", "name": "東京迪士尼海洋 (Tokyo DisneySea)", "notes": "整天暢玩，大行李寄放上野，帶背包出發", "transit": "", "transportFromPrev": "🚇 JR 京葉線・迪士尼線" },
+      { "order": 2, "time": "閉園後入住", "name": "迪士尼大使大飯店 (住宿)", "notes": "已確認當晚入住，免去晚上擠電車奔波", "transit": "", "transportFromPrev": "🚇 JR 京葉線・迪士尼線" }
+    ]},
+    { "day": 3, "date": "03/19", "weekday": "週五", "theme": "橫濱親子遊", "themeColor": "#10B981", "spots": [
+      { "order": 1, "time": "10:30~13:30", "name": "橫濱麵包超人兒童博物館", "notes": "舞濱直達橫濱巴士 (約50分) 或新木場轉乘", "transit": "", "transportFromPrev": "🚌 灣岸高速直達巴士" },
+      { "order": 2, "time": "14:00~17:30", "name": "橫濱水陸兩用船 & 摩天輪", "notes": "港未來21區搭船、摩天輪與紅磚倉庫逛街", "transit": "", "transportFromPrev": "🚶 園區 / 港區漫步" },
+      { "order": 3, "time": "18:30", "name": "返回上野飯店 Check-in", "notes": "搭 JR 上野東京線直達上野，領回大行李", "transit": "", "transportFromPrev": "🚇 JR 上野東京線" }
+    ]},
+    { "day": 4, "date": "03/20", "weekday": "週六", "theme": "樂園二選一", "themeColor": "#F59E0B", "spots": [
+      { "order": 1, "time": "09:30~15:00", "name": "PokéPark Kanto", "notes": "需三個月前抽門票，3個月前抽到票", "transit": "上野站->日比谷線->秋葉原->走到岩本町站->京王多摩中心->京王讀賣樂園   約1小時20分", "transportFromPrev": "🚇 京王線電車", "links": ["https://ticket-en.pokepark-kanto.co.jp/"] },
+      { "order": 2, "time": "09:00~15:00", "name": "あらかわ荒川遊園地 (選項B)", "notes": "近上野平價遊樂園，建議二選一以免兩邊趕路", "transit": "", "transportFromPrev": "🚋 都電荒川線路面電車" },
+      { "order": 3, "time": "15:00~17:00", "name": "不忍池划鴨子船", "notes": "划划鴨子船", "transit": "", "transportFromPrev": "🚇 JR 山手線 / 東京地鐵" },
+      { "order": 4, "time": "傍晚返回", "name": "續住上野飯店 (不換房)", "notes": "免搬家，養精蓄銳準備隔天河口湖", "transit": "", "transportFromPrev": "🚶 園區 / 港區漫步" }
+    ]},
+    { "day": 5, "date": "03/21", "weekday": "週日", "theme": "河口湖自駕", "themeColor": "#8B5CF6", "spots": [
+      { "order": 1, "time": "08:30", "name": "新宿車站 (搭乘富士回遊)", "notes": "上野搭山手線到新宿，搭直達特急免換車", "transit": "", "transportFromPrev": "🚄 JR 富士回遊特急" },
+      { "order": 2, "time": "10:30", "name": "Toyota Rent a Car 富士河口湖店", "notes": "山梨県南都留郡富士河口湖町船津4657（甲租乙還至御殿場）", "transit": "河口湖站出站->沿國道137號步行約7分鐘（ENEOS加油站旁）至トヨタレンタカー富士河口湖店取車", "transportFromPrev": "🚄 JR 富士回遊特急", "links": ["https://rent.toyota.co.jp/zh-tw/"] },
+      { "order": 3, "time": "11:30~14:00", "name": "河口湖天上山纜車 & 遊覽船", "notes": "眺望富士山美景，人潮多需預留排隊時間", "transit": "", "transportFromPrev": "🚗 富士山河口湖自駕" },
+      { "order": 4, "time": "14:30~17:00", "name": "富士 SUBARU 樂園", "notes": "森林探索戶外園區，大人小孩狗狗都適合", "transit": "", "transportFromPrev": "🚗 富士山河口湖自駕" },
+      { "order": 5, "time": "傍晚入住", "name": "河口湖溫泉旅館 (住宿)", "notes": "一泊二食享受富士山景色", "transit": "", "transportFromPrev": "🚗 富士山河口湖自駕" }
+    ]},
+    { "day": 6, "date": "03/22", "weekday": "週一", "theme": "御殿場還車 & 採買", "themeColor": "#06B6D4", "spots": [
+      { "order": 1, "time": "11:30~14:00", "name": "Toyota Rent a Car 御殿場駅前店 (還車 & 回東京)", "notes": "從河口湖自駕至御殿場站前店甲租乙還（静岡県御殿場市新橋1850-6，可順遊御殿場 Outlet），再搭車返回東京", "transit": "河口湖自駕->東富士五湖道路->トヨタレンタカー御殿場駅前店還車->搭高速巴士或JR回東京/上野", "transportFromPrev": "🚗 富士山河口湖自駕" },
+      { "order": 2, "time": "17:00~20:00", "name": "上野市區最後採買", "notes": "入住上野，集中在阿美橫町、多慶屋採購、唐吉訶德", "transit": "", "transportFromPrev": "🚗 富士山河口湖自駕" }
+    ]},
+    { "day": 7, "date": "03/23", "weekday": "週二", "theme": "上野採買 & 返台", "themeColor": "#64748B", "spots": [
+      { "order": 1, "time": "10:00~11:30", "name": "阿美橫町晨間最後補貨", "notes": "藥妝與零食最後打包", "transit": "", "transportFromPrev": "" },
+      { "order": 2, "time": "12:15 出發", "name": "出發成田機場 (15:40班機)", "notes": "搭乘 Skyliner 直達成田，13:10前抵達櫃檯", "transit": "", "transportFromPrev": "🚄 京成 Skyliner 特急" }
+    ]}
+  ]
+};
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const emojiOf = s => (String(s || "").trim().match(/^\S+/) || [""])[0];
+const shortName = s => s.replace(/\s*[\(（][^)）]*[\)）]/g, "").trim();
+const year = DATA.startDate.slice(0, 4);
+const first = DATA.days[0], last = DATA.days[DATA.days.length - 1];
+const wd = w => w.replace("週", "");
+const PASTELS = ["#F9C6D3", "#BFE8D6", "#BFDDF7", "#FCE9A6", "#DCCFF5", "#FFD3B6"];
+let pageNo = 0;
+const foot = () => `<div class="pageno">— ${++pageNo} —</div>`;
+
+/* ───── 封面 ───── */
+const coverArt = `
+<svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" aria-label="富士山、晴空塔與遊樂園插畫">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CDE7FB"/><stop offset="1" stop-color="#FFF1E6"/></linearGradient>
+    <linearGradient id="fuji" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FA9E8"/><stop offset="1" stop-color="#B9C9F2"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#sky)"/>
+  <circle cx="520" cy="62" r="30" fill="#FFD27A"/><circle cx="520" cy="62" r="40" fill="#FFD27A" opacity=".25"/>
+  <g fill="#fff" opacity=".95">
+    <ellipse cx="110" cy="58" rx="34" ry="13"/><ellipse cx="135" cy="50" rx="22" ry="14"/>
+    <ellipse cx="400" cy="40" rx="28" ry="10"/><ellipse cx="420" cy="34" rx="18" ry="11"/>
+  </g>
+  <!-- 富士山 -->
+  <path d="M60 260 L215 92 Q230 80 245 92 L400 260 Z" fill="url(#fuji)"/>
+  <path d="M215 92 Q230 80 245 92 L282 132 L266 126 L254 138 L240 124 L226 138 L212 124 L196 134 L178 132 Z" fill="#fff"/>
+  <!-- 晴空塔 -->
+  <g transform="translate(455 0)">
+    <rect x="-1.5" y="40" width="3" height="22" fill="#9AA7BF"/>
+    <path d="M-6 62 L6 62 L9 120 L-9 120 Z" fill="#D7DEEA"/>
+    <rect x="-14" y="118" width="28" height="9" rx="4" fill="#7CA3E0"/>
+    <path d="M-9 127 L9 127 L13 175 L-13 175 Z" fill="#D7DEEA"/>
+    <rect x="-17" y="172" width="34" height="11" rx="5" fill="#7CA3E0"/>
+    <path d="M-13 183 L13 183 L26 262 L-26 262 Z" fill="#C8D1E2"/>
+    <path d="M-13 183 L13 262 M13 183 L-13 262" stroke="#E9EEF6" stroke-width="2"/>
+  </g>
+  <!-- 摩天輪 -->
+  <g transform="translate(345 170)">
+    <path d="M0 0 L-24 92 M0 0 L24 92" stroke="#E7A2B6" stroke-width="5" stroke-linecap="round"/>
+    <circle r="52" fill="none" stroke="#F4B6C7" stroke-width="5"/>
+    <g stroke="#F4B6C7" stroke-width="2">
+      <line x1="-52" y1="0" x2="52" y2="0"/><line x1="0" y1="-52" x2="0" y2="52"/>
+      <line x1="-37" y1="-37" x2="37" y2="37"/><line x1="-37" y1="37" x2="37" y2="-37"/>
+    </g>
+    <g>
+      <circle cx="0" cy="-52" r="8" fill="#FCE9A6"/><circle cx="52" cy="0" r="8" fill="#BFE8D6"/>
+      <circle cx="0" cy="52" r="8" fill="#DCCFF5"/><circle cx="-52" cy="0" r="8" fill="#FFD3B6"/>
+      <circle cx="37" cy="-37" r="7" fill="#BFDDF7"/><circle cx="-37" cy="37" r="7" fill="#F9C6D3"/>
+      <circle cx="37" cy="37" r="7" fill="#FCE9A6"/><circle cx="-37" cy="-37" r="7" fill="#BFE8D6"/>
+    </g>
+    <circle r="7" fill="#E7A2B6"/>
+  </g>
+  <!-- 樂園城堡 -->
+  <g transform="translate(150 175)">
+    <rect x="-34" y="20" width="68" height="70" fill="#FFE2EC"/>
+    <rect x="-50" y="5" width="20" height="85" fill="#FFD3E2"/><rect x="30" y="5" width="20" height="85" fill="#FFD3E2"/>
+    <path d="M-54 7 L-40 -26 L-26 7 Z" fill="#A99BE6"/><path d="M26 7 L40 -26 L54 7 Z" fill="#A99BE6"/>
+    <rect x="-12" y="-12" width="24" height="34" fill="#FFE2EC"/><path d="M-16 -10 L0 -46 L16 -10 Z" fill="#8F7FE0"/>
+    <path d="M-10 90 L-10 64 Q0 52 10 64 L10 90 Z" fill="#C7A4D9"/>
+    <line x1="0" y1="-46" x2="0" y2="-60" stroke="#8F7FE0" stroke-width="2"/><path d="M0 -60 L12 -56 L0 -52 Z" fill="#F08A9E"/>
+    <circle cx="-40" cy="40" r="4" fill="#fff"/><circle cx="40" cy="40" r="4" fill="#fff"/>
+  </g>
+  <!-- 氣球 -->
+  <g>
+    <line x1="245" y1="190" x2="250" y2="240" stroke="#B9A7A0"/><ellipse cx="245" cy="178" rx="11" ry="13" fill="#F9A8BE"/>
+    <line x1="262" y1="200" x2="252" y2="240" stroke="#B9A7A0"/><ellipse cx="264" cy="188" rx="10" ry="12" fill="#9FD8BE"/>
+  </g>
+  <!-- 草地 -->
+  <path d="M0 255 Q150 232 300 252 T600 248 L600 300 L0 300 Z" fill="#BFE8C8"/>
+  <path d="M0 272 Q160 256 320 272 T600 268 L600 300 L0 300 Z" fill="#A9DDB8"/>
+  <g font-size="16"><text x="40" y="292">🌸</text><text x="520" y="290">🌸</text><text x="285" y="296">🌷</text></g>
+</svg>`;
+
+let html = `
+<section class="page cover">
+  <div class="tape dots" style="--t1:#F9C6D3; top:7mm; left:16mm; transform:rotate(-8deg)"></div>
+  <div class="tape" style="--t1:#BFE8D6; --t2:#E2F5EC; top:8mm; right:16mm; transform:rotate(7deg)"></div>
+  <div class="badge">FAMILY TRIP ✿ TOKYO</div>
+  <h1><small>2027</small>東京家族親子冒險之旅</h1>
+  <div class="sub">旅のしおり</div>
+  <div class="dates rounded">
+    🛫 ${year}.${first.date.replace("/", ".")}（${wd(first.weekday)}）
+    <span class="arrow">～ ♡ ～</span>
+    ${year}.${last.date.replace("/", ".")}（${wd(last.weekday)}）🛬
+  </div>
+  <div class="art">${coverArt}</div>
+  <div class="tags">
+    <span style="background:#BFDDF7">🗼 東京</span><span style="background:#F9C6D3">🏰 迪士尼海洋</span>
+    <span style="background:#BFE8D6">🎡 橫濱</span><span style="background:#FCE9A6">⚡ PokéPark</span>
+    <span style="background:#DCCFF5">🗻 河口湖</span><span style="background:#FFD3B6">🛍️ 上野</span>
+  </div>
+  <div class="sign">
+    <h3>✍️ 家族成員簽名 <span class="jp">なまえ</span></h3>
+    <div class="row">
+      ${["🐻", "🐰", "🐥", "🐱", "🐼", "🦊", "🐨", "🐸"].map(f => `<div class="slot"><div class="face">${f}</div><div class="ln"></div><div class="cap">たびのなかま</div></div>`).join("")}
+    </div>
+  </div>
+</section>`;
+pageNo++;
+
+/* ───── 7 天總覽 ───── */
+html += `
+<section class="page">
+  <div class="tape" style="--t1:#FCE9A6; --t2:#FFF5D1; top:6mm; right:22mm; transform:rotate(5deg)"></div>
+  <div class="ttl"><div class="jp">にってい いちらん</div><h2><span class="hl">📅 ${DATA.totalDays} 天行程總覽</span></h2></div>
+  <div class="ov">
+    ${DATA.days.map(d => {
+      const tr = [...new Set(d.spots.map(s => emojiOf(s.transportFromPrev)).filter(Boolean))];
+      if (d.spots.some(s => s.name.includes("機場"))) tr.unshift("✈️");
+      return `<div class="ov-row" style="--c:${d.themeColor}">
+        <div class="ov-day"><b>Day ${d.day}</b><span>${esc(d.date)}（${esc(wd(d.weekday))}）</span></div>
+        <div class="ov-main"><div class="theme">${esc(d.theme)}</div>
+          <div class="spots">${d.spots.map(s => `<span>${esc(shortName(s.name))}</span>`).join("")}</div></div>
+        <div class="ov-tr">${tr.join("")}</div>
+      </div>`;
+    }).join("")}
+  </div>
+  <div class="legend">✈️ 飛機　🚄 特急　🚇 電車／地鐵　🚌 巴士　🚋 路面電車　🚗 自駕　🚶 步行</div>
+  ${foot()}
+</section>`;
+
+/* ───── 每日行程 ───── */
+const transitHtml = t => {
+  const steps = t.split(/\s*(?:->|➔|→)\s*/).map(s => s.trim()).filter(Boolean);
+  return `<div class="transit"><b>🚉 轉乘</b>${steps.map(esc).join('<span class="ar">➔</span>')}</div>`;
+};
+
+DATA.days.forEach(d => {
+  const n = d.spots.length;
+  const cls = n >= 6 ? "compact" : "";
+  const spots = d.spots.map((s, i) => {
+    const next = d.spots[i + 1];
+    const opt = /選項B/.test(s.name) ? "B" : (next && /選項B/.test(next.name) ? "A" : "");
+    return `<div class="spot">
+      ${s.transportFromPrev ? `<div class="move">${esc(s.transportFromPrev)}</div>` : ""}
+      <div class="card">
+        <div class="chk"></div>
+        <div>
+          <div class="top"><span class="time">${esc(s.time)}</span>${opt ? `<span class="opt">選項 ${opt}・二選一</span>` : ""}</div>
+          <div class="name">${esc(s.name)}</div>
+          ${s.notes ? `<div class="note">${esc(s.notes)}</div>` : ""}
+          ${s.transit ? transitHtml(s.transit) : ""}
+          ${(s.links || []).map(l => `<div class="link">🔗 ${esc(l)}</div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  const fill = n <= 3 ? `
+    <div class="fill">
+      <div class="fill-row">
+        <div class="box photo"><h5>📸 今日照片黏貼框 <span class="jp">しゃしん</span></h5>
+          <div class="frame"><div class="tape l"></div><div class="tape r"></div>Photo ♡</div></div>
+        <div class="box stamps"><h5>💮 紀念印章欄 <span class="jp">スタンプ</span></h5>
+          <div class="grid"><div>stamp</div><div>stamp</div><div>stamp</div><div>stamp</div></div></div>
+      </div>
+      <div class="box food"><h5>🍙 今日美食 Memo <span class="jp">おいしかった！</span></h5><div class="lined"></div></div>
+    </div>` : `
+    <div class="fill">
+      <div class="box food"><h5>📝 メモ <span class="jp">きょうのできごと</span></h5><div class="lined"></div></div>
+    </div>`;
+
+  html += `
+  <section class="page day ${cls}" style="--c:${d.themeColor}">
+    <div class="dh">
+      <div class="tape a"></div><div class="tape dots b"></div>
+      <div class="num">Day<b>${d.day}</b></div>
+      <div class="info">
+        <div class="date">${year}.${esc(d.date.replace("/", "."))}（${esc(wd(d.weekday))}）</div>
+        <div class="theme">${esc(d.theme)}</div>
+      </div>
+      <div class="count">📍 ${n} 個行程</div>
+    </div>
+    <div class="sec"><h4>今日行程</h4><span class="jp">今日のハイライト</span></div>
+    <div class="tl">${spots}</div>
+    ${fill}
+    ${foot()}
+  </section>`;
+});
+
+/* ───── 附錄：行李 & 緊急聯絡 ───── */
+const ck = (title, dot, items) => `<div class="panel"><h3><span class="dot" style="background:${dot}"></span>${title}</h3>
+  <ul class="ck">${items.map(i => `<li><div>${i}</div></li>`).join("")}</ul></div>`;
+html += `
+<section class="page">
+  <div class="tape dots" style="--t1:#BFE8D6; top:6mm; right:20mm; transform:rotate(6deg)"></div>
+  <div class="ttl"><div class="jp">持ち物チェック</div><h2><span class="hl">🎒 行李 Checklist</span></h2></div>
+  <div class="apx-grid">
+    ${ck("證件・票券", "#F9C6D3", [
+      "護照（效期 6 個月以上）",
+      "VJW QR Code（Visit Japan Web 入境・海關）<small>截圖存手機＋印一份</small>",
+      "電子機票・住宿確認單",
+      "台灣駕照正本＋日文譯本<small>Day 5 河口湖取車必備</small>",
+      "迪士尼海洋 / PokéPark 門票",
+    ])}
+    ${ck("錢包・交通", "#FCE9A6", [
+      "日幣現金（零錢包）",
+      "信用卡（海外回饋卡）",
+      "交通 IC 卡（Suica / PASMO）",
+      "Skyliner・富士回遊車票",
+      "網卡 / eSIM",
+    ])}
+    ${ck("電子・生活", "#BFDDF7", [
+      "充電器 / 傳輸線",
+      "轉接頭（日本 A 型 100V）",
+      "行動電源（隨身登機）",
+      "保暖外套・圍巾<small>3 月河口湖早晚很冷</small>",
+      "摺疊傘・購物袋",
+    ])}
+    ${ck("兒童・藥品", "#BFE8D6", [
+      "兒童推車",
+      "常備藥品（退燒・腸胃・暈車）",
+      "OK 繃・防蚊液・濕紙巾",
+      "兒童換洗衣物・水壺",
+      "小零食・安撫小玩具",
+    ])}
+  </div>
+
+  <div class="panel sos">
+    <h3><span class="dot" style="background:#F08A9E"></span>🆘 緊急聯絡 <span class="jp">きんきゅう れんらく</span></h3>
+    <div class="tels">
+      <div class="tel" style="background:#DCEBFB"><b>110</b><span>👮 警察</span></div>
+      <div class="tel" style="background:#FDE0E6"><b>119</b><span>🚑 救護車・消防</span></div>
+      <div class="tel wide" style="background:#FFF3D1">
+        <b>🇹🇼 台北駐日經濟文化代表處</b>
+        <div>代表號：03-3280-7811<br>急難救助：080-6557-8796（24 小時）</div>
+      </div>
+    </div>
+    <div class="fillin">
+      <div><span>🏨 上野飯店</span><i></i></div>
+      <div><span>🏰 迪士尼大使飯店</span><i></i></div>
+      <div><span>♨️ 河口湖旅館</span><i></i></div>
+      <div><span>🚗 Toyota 租車</span><i></i></div>
+      <div><span>🛡️ 旅遊保險</span><i></i></div>
+      <div><span>✈️ 航空公司</span><i></i></div>
+    </div>
+    <div class="jp-phrase">
+      <div>🗣️ <b>助けてください</b>（請幫幫我）</div>
+      <div>🗣️ <b>病院はどこですか</b>（醫院在哪裡）</div>
+      <div>🗣️ <b>子どもが迷子です</b>（孩子走失了）</div>
+      <div>🗣️ <b>日本語が話せません</b>（我不會說日文）</div>
+    </div>
+    <div class="tip">※ 電話號碼出發前請至外交部領事事務局網站再次確認；手機撥打日本市話需加區碼 03。</div>
+  </div>
+  ${foot()}
+</section>`;
+
+/* ───── 空白 Memo ───── */
+html += `
+<section class="page memo-page">
+  <div class="tape" style="--t1:#DCCFF5; --t2:#EFE9FB; top:6mm; left:20mm; transform:rotate(-6deg)"></div>
+  <div class="ttl"><div class="jp">メモ</div><h2><span class="hl">📝 旅の Memo</span></h2></div>
+  <div class="paper"></div>
+  ${foot()}
+</section>`;
+
+document.getElementById("book").innerHTML = html;
+
+/* 溢出偵測：塞不下就切換精簡排版，確保每天一頁 */
+const fit = () => document.querySelectorAll(".page.day").forEach(p => {
+  p.classList.remove("tight");
+  const fill = p.querySelector(".fill");
+  const over = () => fill.getBoundingClientRect().height < 20 || p.scrollHeight > p.clientHeight + 1;
+  if (over()) p.classList.add("compact");
+  if (over()) p.classList.add("tight");
+});
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(fit);
+window.addEventListener("beforeprint", fit);
+</script>
+</body>
+</html>
