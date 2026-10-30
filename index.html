@@ -12,7 +12,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <!-- SortableJS for Drag & Drop reordering on Desktop & Mobile -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
+    body { font-family: 'M PLUS Rounded 1c', 'Noto Sans TC', sans-serif; }
     #map { height: 100%; width: 100%; min-height: 420px; z-index: 10; }
     .custom-marker {
       display: flex;
@@ -24,8 +26,8 @@
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
       border: 2px solid white;
     }
-    .leaflet-popup-content-wrapper { border-radius: 12px; }
-    .sortable-ghost { opacity: 0.35; background-color: #EEF2FF !important; border: 2px dashed #6366F1 !important; }
+    .leaflet-popup-content-wrapper { border-radius: 16px; }
+    .sortable-ghost { opacity: 0.35; background-color: #FDF2F8 !important; border: 2px dashed #EC4899 !important; }
     .sortable-drag { cursor: grabbing !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15) !important; }
     .spot-card, .kanban-card, .table-spot-row { cursor: grab; }
     .spot-card:active, .kanban-card:active, .table-spot-row:active { cursor: grabbing; }
@@ -35,39 +37,150 @@
       50% { stroke-opacity: 0.55; }
     }
     .active-route-glow { animation: pulseRoute 1.8s infinite ease-in-out; }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-3px) rotate(3deg); }
+    }
+    .mascot-float { animation: floatSlow 3.2s ease-in-out infinite; }
+    .mascot-float-delay { animation: floatSlow 3.2s ease-in-out 1.5s infinite; }
+    /* Cute subtle pastel polka-dot & character watermark background for blank areas */
+    .cute-bg-pattern {
+      background-color: #FFFDF9;
+      background-image:
+        radial-gradient(#FDE68A 1.3px, transparent 1.3px),
+        radial-gradient(#FBCFE8 1.3px, #FFFDF9 1.3px);
+      background-size: 36px 36px;
+      background-position: 0 0, 18px 18px;
+    }
+    .kawaii-header {
+      background: linear-gradient(125deg, #4F46E5 0%, #7C3AED 38%, #DB2777 78%, #F59E0B 100%);
+      position: relative;
+      overflow: hidden;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+<body class="cute-bg-pattern text-slate-800 h-screen flex flex-col overflow-hidden">
 
-  <!-- Header -->
-  <header class="bg-indigo-600 text-white shadow-md z-20 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-    <div class="flex items-center gap-2.5 flex-wrap">
-      <span class="text-2xl">🗼</span>
+  <!-- Cute Theme Park Header -->
+  <header class="kawaii-header text-white shadow-md z-20 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 border-b-2 border-white/30">
+    <!-- Decorative floating background sparkles -->
+    <div class="pointer-events-none select-none absolute inset-0 overflow-hidden opacity-20">
+      <svg class="absolute -top-3 left-1/4 w-16 h-16 text-yellow-200" viewBox="0 0 100 100" fill="currentColor">
+        <circle cx="50" cy="58" r="24"/><circle cx="28" cy="34" r="14"/><circle cx="72" cy="34" r="14"/>
+      </svg>
+      <svg class="absolute -bottom-4 right-1/3 w-20 h-20 text-pink-200" viewBox="0 0 100 100" fill="currentColor">
+        <circle cx="50" cy="50" r="32"/>
+      </svg>
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap relative z-10">
+      <!-- Cute Mascot Avatar Group on Left -->
+      <div class="flex items-center -space-x-1.5 bg-white/20 backdrop-blur-sm p-1 rounded-2xl border border-white/40 shadow-inner">
+        <!-- Mickey (Disney) -->
+        <button type="button" data-jump-day="2" class="mascot-jump-btn mascot-float w-9 h-9 rounded-full bg-pink-50 border-2 border-white shadow flex items-center justify-center hover:scale-110 transition" title="點我看 D2 迪士尼海洋">
+          <svg class="w-7 h-7" viewBox="0 0 64 64">
+            <circle cx="16" cy="18" r="11" fill="#1E293B"/>
+            <circle cx="48" cy="18" r="11" fill="#1E293B"/>
+            <circle cx="32" cy="36" r="18" fill="#1E293B"/>
+            <ellipse cx="32" cy="40" rx="14" ry="12" fill="#FDE68A"/>
+            <circle cx="26" cy="35" r="2.3" fill="#1E293B"/>
+            <circle cx="38" cy="35" r="2.3" fill="#1E293B"/>
+            <ellipse cx="32" cy="40" rx="3.2" ry="2.2" fill="#1E293B"/>
+            <path d="M26 45 Q32 50 38 45" stroke="#1E293B" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <!-- Anpanman -->
+        <button type="button" data-jump-day="3" class="mascot-jump-btn mascot-float-delay w-9 h-9 rounded-full bg-amber-50 border-2 border-white shadow flex items-center justify-center hover:scale-110 transition" title="點我看 D3 橫濱麵包超人博物館">
+          <svg class="w-7 h-7" viewBox="0 0 64 64">
+            <circle cx="32" cy="34" r="20" fill="#F59E0B"/>
+            <circle cx="32" cy="34" r="18.5" fill="#FBBF24"/>
+            <circle cx="20" cy="36" r="5.5" fill="#EF4444"/>
+            <circle cx="44" cy="36" r="5.5" fill="#EF4444"/>
+            <circle cx="32" cy="35" r="6" fill="#DC2626"/>
+            <circle cx="30" cy="33" r="1.8" fill="#FFFFFF"/>
+            <circle cx="25" cy="26" r="2.2" fill="#1E293B"/>
+            <circle cx="39" cy="26" r="2.2" fill="#1E293B"/>
+            <path d="M22 21 Q25 18 28 21" stroke="#1E293B" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M36 21 Q39 18 42 21" stroke="#1E293B" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M25 43 Q32 49 39 43" stroke="#78350F" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <!-- Pikachu / Pokéball (Pokémon) -->
+        <button type="button" data-jump-day="4" class="mascot-jump-btn mascot-float w-9 h-9 rounded-full bg-yellow-50 border-2 border-white shadow flex items-center justify-center hover:scale-110 transition" title="點我看 D4 寶可夢 PokéPark">
+          <svg class="w-7 h-7" viewBox="0 0 64 64">
+            <polygon points="14,6 24,22 12,26" fill="#FACC15"/>
+            <polygon points="14,6 19,14 13,16" fill="#1E293B"/>
+            <polygon points="50,6 40,22 52,26" fill="#FACC15"/>
+            <polygon points="50,6 45,14 51,16" fill="#1E293B"/>
+            <circle cx="32" cy="38" r="17" fill="#FACC15"/>
+            <circle cx="20" cy="42" r="4.2" fill="#EF4444"/>
+            <circle cx="44" cy="42" r="4.2" fill="#EF4444"/>
+            <circle cx="25" cy="34" r="2.4" fill="#1E293B"/>
+            <circle cx="39" cy="34" r="2.4" fill="#1E293B"/>
+            <circle cx="24.2" cy="33.2" r="0.9" fill="#FFFFFF"/>
+            <circle cx="38.2" cy="33.2" r="0.9" fill="#FFFFFF"/>
+            <path d="M28 40 Q30 42 32 40 Q34 42 36 40" stroke="#1E293B" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <!-- Hello Kitty / Sanrio -->
+        <button type="button" data-jump-day="4" class="mascot-jump-btn mascot-float-delay w-9 h-9 rounded-full bg-rose-50 border-2 border-white shadow flex items-center justify-center hover:scale-110 transition" title="點我看 D4 三麗鷗彩虹樂園">
+          <svg class="w-7 h-7" viewBox="0 0 64 64">
+            <polygon points="14,14 26,20 14,28" fill="#FFFFFF" stroke="#475569" stroke-width="2"/>
+            <polygon points="50,14 38,20 50,28" fill="#FFFFFF" stroke="#475569" stroke-width="2"/>
+            <ellipse cx="32" cy="37" rx="19" ry="15" fill="#FFFFFF" stroke="#475569" stroke-width="2"/>
+            <!-- Iconic Red/Pink Ribbon Bow -->
+            <circle cx="45" cy="21" r="5" fill="#F43F5E"/>
+            <circle cx="37" cy="19" r="5.5" fill="#FB7185"/>
+            <circle cx="49" cy="26" r="5.5" fill="#FB7185"/>
+            <circle cx="43" cy="22" r="3" fill="#E11D48"/>
+            <!-- Eyes & Yellow Nose -->
+            <ellipse cx="24" cy="37" rx="2" ry="2.8" fill="#1E293B"/>
+            <ellipse cx="40" cy="37" rx="2" ry="2.8" fill="#1E293B"/>
+            <ellipse cx="32" cy="40" rx="2.8" ry="2" fill="#FBBF24"/>
+            <!-- Whiskers -->
+            <line x1="9" y1="35" x2="16" y2="36" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+            <line x1="9" y1="41" x2="16" y2="40" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+            <line x1="55" y1="35" x2="48" y2="36" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+            <line x1="55" y1="41" x2="48" y2="40" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
       <div>
         <div class="flex items-center gap-2 flex-wrap">
-          <h1 class="text-base sm:text-lg font-bold leading-tight">東京 7 天 6 夜 親子自由行地圖</h1>
+          <h1 class="text-base sm:text-lg font-extrabold leading-tight tracking-wide drop-shadow-sm">
+            ✨ 東京 7 天 6 夜 親子夢幻樂園之旅
+          </h1>
           <!-- Editable Start Date Badge -->
-          <label class="inline-flex items-center gap-1 bg-indigo-700/90 hover:bg-indigo-800 border border-indigo-400/40 px-2.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition shadow-sm" title="點擊可隨時修改出發日期，D1~D7 日期與星期會自動重算">
-            <span>📅 出發日：</span>
-            <input type="date" id="startDateInput" value="2027-03-17" class="bg-transparent text-amber-300 font-bold focus:outline-none cursor-pointer text-xs w-[110px]">
+          <label class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/40 px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition shadow-sm" title="點擊可隨時修改出發日期，D1~D7 日期與星期會自動重算">
+            <span>📅 出發：</span>
+            <input type="date" id="startDateInput" value="2027-03-17" class="bg-transparent text-yellow-200 font-extrabold focus:outline-none cursor-pointer text-xs w-[110px]">
           </label>
         </div>
-        <p class="text-xs text-indigo-100 hidden sm:block mt-0.5">真實道路路線預覽 • 整張卡片與表格皆可直接拖曳排序</p>
+        <!-- Cute Character Theme Tags -->
+        <div class="hidden sm:flex items-center gap-1.5 mt-1 text-[11px] font-bold">
+          <span class="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">🏰 迪士尼海洋</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">🥯 麵包超人博物館</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">⚡ 寶可夢 PokéPark</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">🎀 三麗鷗樂園</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">🗻 河口湖富士山</span>
+        </div>
       </div>
     </div>
-    <div class="flex items-center gap-2">
+
+    <div class="flex items-center gap-2 relative z-10">
       <!-- Sync Status Indicator -->
-      <div id="syncBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-700/70 border border-indigo-400/30 text-indigo-100">
-        <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <div id="syncBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-black/20 backdrop-blur-sm border border-white/30 text-white">
+        <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-300"></span>
         <span id="syncText">行程自動儲存</span>
       </div>
-      <button id="addSpotBtn" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 shadow transition">
+      <button id="addSpotBtn" class="bg-amber-300 hover:bg-amber-400 text-slate-900 font-extrabold px-3.5 py-1.5 rounded-full text-sm flex items-center gap-1 shadow-md border-2 border-white transition hover:scale-105">
         <span>➕</span> 新增景點
       </button>
-      <button id="exportCsvBtn" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 border border-indigo-400 transition" title="匯出相容 Google My Maps 的 CSV">
-        <span>📥</span> 匯出 Google 地圖檔
+      <button id="exportCsvBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 border border-white/40 transition" title="匯出相容 Google My Maps 的 CSV">
+        <span>📥</span> 匯出地圖檔
       </button>
-      <button id="resetBtn" class="bg-indigo-800 hover:bg-indigo-900 text-indigo-200 px-2 py-1.5 rounded-lg text-xs transition" title="重置為初始預設行程">
+      <button id="resetBtn" class="bg-black/20 hover:bg-black/35 text-white/90 px-2.5 py-1.5 rounded-full text-xs transition border border-white/20" title="重置為初始預設行程">
         重置
       </button>
     </div>
@@ -105,11 +218,11 @@
     
     <!-- Sidebar / Itinerary List -->
     <aside id="sidebarPanel" class="w-full sm:w-96 md:w-[430px] bg-white border-r border-slate-200 flex flex-col z-10 overflow-hidden flex-shrink-0">
-      <div class="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
-        <span id="spotCountLabel" class="font-semibold text-slate-700">顯示 0 個地點</span>
-        <span class="text-indigo-600 font-medium">💡 整張卡片可拖曳排序 • 點一下定位路線</span>
+      <div class="p-3 bg-gradient-to-r from-indigo-50 via-pink-50 to-amber-50 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
+        <span id="spotCountLabel" class="font-bold text-slate-700">顯示 0 個地點</span>
+        <span class="text-indigo-600 font-semibold">✨ 整張卡片可拖曳 • 點擊看路線</span>
       </div>
-      <div id="itineraryList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+      <div id="itineraryList" class="flex-1 overflow-y-auto p-3 space-y-2.5 cute-bg-pattern">
         <!-- Rendered by JS -->
       </div>
     </aside>
@@ -131,7 +244,7 @@
     </section>
 
     <!-- Table Overview View (Full Screen when active) -->
-    <section id="tablePanel" class="hidden flex-1 h-full bg-slate-50 overflow-y-auto p-4 sm:p-6 z-20">
+    <section id="tablePanel" class="hidden flex-1 h-full cute-bg-pattern overflow-y-auto p-4 sm:p-6 z-20">
       <div class="max-w-7xl mx-auto space-y-6">
         
         <!-- 7-Day Columns Quick Matrix -->
@@ -569,6 +682,38 @@
       });
     }
 
+    // Cute Kawaii SVG Mascots for Header, Day Columns & Theme Park Spots
+    const MASCOT_SVGS = {
+      disney: `<svg class="w-5 h-5 inline-block flex-shrink-0" viewBox="0 0 64 64"><circle cx="16" cy="18" r="11" fill="#1E293B"/><circle cx="48" cy="18" r="11" fill="#1E293B"/><circle cx="32" cy="36" r="18" fill="#1E293B"/><ellipse cx="32" cy="40" rx="14" ry="12" fill="#FDE68A"/><circle cx="26" cy="35" r="2.3" fill="#1E293B"/><circle cx="38" cy="35" r="2.3" fill="#1E293B"/><ellipse cx="32" cy="40" rx="3.2" ry="2.2" fill="#1E293B"/><path d="M26 45 Q32 50 38 45" stroke="#1E293B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
+      anpanman: `<svg class="w-5 h-5 inline-block flex-shrink-0" viewBox="0 0 64 64"><circle cx="32" cy="34" r="20" fill="#F59E0B"/><circle cx="32" cy="34" r="18.5" fill="#FBBF24"/><circle cx="20" cy="36" r="5.5" fill="#EF4444"/><circle cx="44" cy="36" r="5.5" fill="#EF4444"/><circle cx="32" cy="35" r="6" fill="#DC2626"/><circle cx="30" cy="33" r="1.8" fill="#FFFFFF"/><circle cx="25" cy="26" r="2.2" fill="#1E293B"/><circle cx="39" cy="26" r="2.2" fill="#1E293B"/><path d="M25 43 Q32 49 39 43" stroke="#78350F" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>`,
+      pokemon: `<svg class="w-5 h-5 inline-block flex-shrink-0" viewBox="0 0 64 64"><polygon points="14,6 24,22 12,26" fill="#FACC15"/><polygon points="14,6 19,14 13,16" fill="#1E293B"/><polygon points="50,6 40,22 52,26" fill="#FACC15"/><polygon points="50,6 45,14 51,16" fill="#1E293B"/><circle cx="32" cy="38" r="17" fill="#FACC15"/><circle cx="20" cy="42" r="4.2" fill="#EF4444"/><circle cx="44" cy="42" r="4.2" fill="#EF4444"/><circle cx="25" cy="34" r="2.4" fill="#1E293B"/><circle cx="39" cy="34" r="2.4" fill="#1E293B"/><path d="M28 40 Q30 42 32 40 Q34 42 36 40" stroke="#1E293B" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+      pokeball: `<svg class="w-4 h-4 inline-block flex-shrink-0" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#FFFFFF" stroke="#1E293B" stroke-width="4"/><path d="M4 32 A28 28 0 0 1 60 32 Z" fill="#EF4444" stroke="#1E293B" stroke-width="4"/><line x1="4" y1="32" x2="60" y2="32" stroke="#1E293B" stroke-width="5"/><circle cx="32" cy="32" r="9" fill="#FFFFFF" stroke="#1E293B" stroke-width="4"/><circle cx="32" cy="32" r="4" fill="#1E293B"/></svg>`,
+      sanrio: `<svg class="w-5 h-5 inline-block flex-shrink-0" viewBox="0 0 64 64"><polygon points="14,14 26,20 14,28" fill="#FFFFFF" stroke="#475569" stroke-width="2"/><polygon points="50,14 38,20 50,28" fill="#FFFFFF" stroke="#475569" stroke-width="2"/><ellipse cx="32" cy="37" rx="19" ry="15" fill="#FFFFFF" stroke="#475569" stroke-width="2"/><circle cx="37" cy="19" r="5.5" fill="#FB7185"/><circle cx="49" cy="26" r="5.5" fill="#FB7185"/><circle cx="43" cy="22" r="3.2" fill="#E11D48"/><ellipse cx="24" cy="37" rx="2" ry="2.8" fill="#1E293B"/><ellipse cx="40" cy="37" rx="2" ry="2.8" fill="#1E293B"/><ellipse cx="32" cy="40" rx="2.8" ry="2" fill="#FBBF24"/></svg>`,
+      fuji: `<svg class="w-5 h-5 inline-block flex-shrink-0" viewBox="0 0 64 64"><polygon points="8,54 24,16 40,16 56,54" fill="#3B82F6"/><polygon points="24,16 40,16 45,28 38,25 32,30 26,25 19,28" fill="#FFFFFF"/><circle cx="28" cy="40" r="2" fill="#FFFFFF"/><circle cx="36" cy="40" r="2" fill="#FFFFFF"/><path d="M29 45 Q32 48 35 45" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+      skytree: `<svg class="w-5 h-5 inline-block flex-shrink-0" viewBox="0 0 64 64"><rect x="29" y="6" width="6" height="12" rx="2" fill="#38BDF8"/><polygon points="22,56 28,18 36,18 42,56" fill="#BAE6FD" stroke="#0284C7" stroke-width="2.5"/><rect x="23" y="30" width="18" height="6" rx="3" fill="#0284C7"/></svg>`
+    };
+
+    function getDayHeaderMascot(dayNum) {
+      if (dayNum === 1) return `<span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center" title="晴空塔">${MASCOT_SVGS.skytree}</span>`;
+      if (dayNum === 2) return `<span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center" title="迪士尼">${MASCOT_SVGS.disney}</span>`;
+      if (dayNum === 3) return `<span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center" title="麵包超人">${MASCOT_SVGS.anpanman}</span>`;
+      if (dayNum === 4) return `<span class="inline-flex items-center -space-x-1"><span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center" title="寶可夢">${MASCOT_SVGS.pokemon}</span><span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center" title="三麗鷗">${MASCOT_SVGS.sanrio}</span></span>`;
+      if (dayNum === 5) return `<span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center" title="富士山">${MASCOT_SVGS.fuji}</span>`;
+      if (dayNum === 6) return `<span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center text-xs" title="自駕還車&採買">🚗</span>`;
+      if (dayNum === 7) return `<span class="w-6 h-6 rounded-full bg-white/95 shadow-sm inline-flex items-center justify-center text-xs" title="滿載返台">✈️</span>`;
+      return "";
+    }
+
+    function getSpotMascotBadge(name = "") {
+      if (/迪士尼|Disney/i.test(name)) return MASCOT_SVGS.disney;
+      if (/麵包超人|アンパンマン/i.test(name)) return MASCOT_SVGS.anpanman;
+      if (/PokéPark|寶可夢|ポケモン/i.test(name)) return `${MASCOT_SVGS.pokemon}${MASCOT_SVGS.pokeball}`;
+      if (/三麗鷗|Sanrio|Kitty/i.test(name)) return MASCOT_SVGS.sanrio;
+      if (/富士山|河口湖天上山|SUBARU/i.test(name)) return MASCOT_SVGS.fuji;
+      if (/晴空塔|Skytree/i.test(name)) return MASCOT_SVGS.skytree;
+      return "";
+    }
+
     // Render Filters (Two-line pill showing "D1 週三" and "03/17" below)
     function renderFilters() {
       const container = document.getElementById("dayFilters");
@@ -908,7 +1053,10 @@
                   ${seqNum}
                 </span>
                 <div>
-                  <h4 class="font-bold text-slate-800 text-sm hover:text-indigo-600 transition leading-snug">${spot.name}</h4>
+                  <h4 class="font-bold text-slate-800 text-sm hover:text-indigo-600 transition leading-snug flex items-center gap-1 flex-wrap">
+                    ${getSpotMascotBadge(spot.name)}
+                    <span>${spot.name}</span>
+                  </h4>
                   <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-1">
                     <span class="px-2 py-0.5 rounded-md font-bold text-[11px] text-white" style="background-color: ${cfg.stroke}">${cfg.name} ${cfg.dateStr}</span>
                     <span class="font-medium text-slate-600">🕒 ${spot.time || '彈性時間'}</span>
@@ -1197,9 +1345,12 @@
         gridHtml += `
           <div class="rounded-xl border ${isDimmed ? 'opacity-45 border-slate-200 bg-slate-50' : 'border-slate-200 bg-white shadow-sm'} flex flex-col overflow-hidden transition">
             <div class="px-3 py-2 text-white font-bold text-xs flex items-center justify-between" style="background-color: ${cfg.stroke}">
-              <div>
-                <div>${cfg.name}</div>
-                <div class="text-[11px] text-amber-200 font-semibold">${cfg.dateStr}</div>
+              <div class="flex items-center gap-1.5">
+                ${getDayHeaderMascot(d)}
+                <div>
+                  <div>${cfg.name}</div>
+                  <div class="text-[11px] text-amber-200 font-semibold">${cfg.dateStr}</div>
+                </div>
               </div>
               <span class="text-[11px] bg-black/20 px-1.5 py-0.5 rounded">${daySpots.length} 站</span>
             </div>
@@ -1216,7 +1367,10 @@
                     </span>
                     <button class="table-edit-btn text-indigo-600 opacity-80 hover:opacity-100 hover:underline" data-id="${s.id}" title="編輯">編輯</button>
                   </div>
-                  <div class="font-bold text-slate-800 mt-0.5 leading-snug pl-3">${s.name}</div>
+                  <div class="font-bold text-slate-800 mt-0.5 leading-snug pl-3 flex items-center gap-1 flex-wrap">
+                    ${getSpotMascotBadge(s.name)}
+                    <span>${s.name}</span>
+                  </div>
                 </div>
               `).join("")}
             </div>
@@ -1330,7 +1484,10 @@
                 </span>
               </td>
               <td class="py-3.5 px-4 align-top">
-                <div class="font-bold text-slate-800 text-sm">${spot.name}</div>
+                <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5 flex-wrap">
+                  ${getSpotMascotBadge(spot.name)}
+                  <span>${spot.name}</span>
+                </div>
               </td>
               <td class="py-3.5 px-4 align-top">
                 ${details.cleanNotes ? `<div class="text-xs text-slate-700 leading-relaxed mb-1.5">${details.cleanNotes}</div>` : ''}
@@ -1904,6 +2061,19 @@
       // Start Date Picker Listener
       document.getElementById("startDateInput")?.addEventListener("change", (e) => {
         saveStartDate(e.target.value);
+      });
+
+      // Header Cute Mascot Quick Jump Listeners
+      document.querySelectorAll(".mascot-jump-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const d = btn.getAttribute("data-jump-day");
+          if (d) {
+            currentFilter = String(d);
+            activeSpotId = null;
+            renderAll(true);
+            showToast(`✨ 已切換至 D${d} 樂園行程！`);
+          }
+        });
       });
 
       // View Mode Switchers
