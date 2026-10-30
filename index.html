@@ -10,6 +10,8 @@
   <!-- Firebase SDK (Compat Version) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <!-- SortableJS for Drag & Drop reordering on Desktop & Mobile -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <style>
     #map { height: 100%; width: 100%; min-height: 420px; z-index: 10; }
     .custom-marker {
@@ -23,6 +25,10 @@
       border: 2px solid white;
     }
     .leaflet-popup-content-wrapper { border-radius: 12px; }
+    .sortable-ghost { opacity: 0.35; background-color: #EEF2FF !important; border: 2px dashed #6366F1 !important; }
+    .sortable-drag { cursor: grabbing !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15) !important; }
+    .drag-handle { cursor: grab; touch-action: none; }
+    .drag-handle:active { cursor: grabbing; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
@@ -88,7 +94,7 @@
     <aside id="sidebarPanel" class="w-full sm:w-96 md:w-[430px] bg-white border-r border-slate-200 flex flex-col z-10 overflow-hidden flex-shrink-0">
       <div class="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center text-xs text-slate-600">
         <span id="spotCountLabel" class="font-semibold text-slate-700">顯示 0 個地點</span>
-        <span class="text-indigo-600 font-medium">💡 點擊卡片可定位地圖</span>
+        <span class="text-indigo-600 font-medium">⠿ 按住左側可拖曳排序 • 點擊定位</span>
       </div>
       <div id="itineraryList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
         <!-- Rendered by JS -->
@@ -105,9 +111,9 @@
       <!-- Map Legend / Helper -->
       <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur shadow-lg border border-slate-200 rounded-xl p-3 z-[1000] text-xs space-y-1.5 hidden md:block">
         <div class="font-bold text-slate-800 flex items-center gap-1">🗺️ 路線圖例與操作提示</div>
-        <div class="text-slate-600">• <b>彩色粗實線</b>：代表當日順遊路線順序</div>
+        <div class="text-slate-600">• <b>拖曳排序</b>：拉動卡片或表格列，地圖路線即時重繪</div>
+        <div class="text-slate-600">• <b>Google 導航</b>：自動帶入上一站與本站座標開啟導航</div>
         <div class="text-slate-600">• <b>點擊地圖任意處</b>：可直接在該處新增景點</div>
-        <div class="text-slate-600">• <b>點擊左側卡片</b>：地圖自動飛往該點並顯示詳情</div>
       </div>
     </section>
 
@@ -120,9 +126,9 @@
           <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span>🗓️</span> 7 天每日行程快速總覽（看板視圖）
+                <span>🗓️</span> 7 天每日行程快速總覽（支援同日與跨日拖曳排序）
               </h2>
-              <p class="text-xs text-slate-500 mt-0.5">一眼掌握每天去哪裡，點擊項目可直接編輯或跳轉地圖定位</p>
+              <p class="text-xs text-slate-500 mt-0.5">可直接按住項目上下拖曳調整順序，或直接拖到其他天數</p>
             </div>
             <button id="tableAddSpotBtn" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 shadow-sm transition">
               <span>➕</span> 新增行程點
@@ -138,7 +144,7 @@
           <div class="px-4 sm:px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/60">
             <div>
               <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span>📋</span> 每日行程詳細表格（含時間與交通備註）
+                <span>📋</span> 每日行程詳細表格（按住左側 ⠿ 可上下拖曳排序）
               </h2>
               <p class="text-xs text-slate-500 mt-0.5" id="tableCountSubtitle">顯示全部行程明細</p>
             </div>
@@ -147,11 +153,12 @@
             <table class="w-full text-left border-collapse text-sm">
               <thead>
                 <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
-                  <th class="py-3 px-4 font-bold whitespace-nowrap w-36">天數 / 主題</th>
-                  <th class="py-3 px-3 font-bold whitespace-nowrap w-14 text-center">順序</th>
-                  <th class="py-3 px-4 font-bold whitespace-nowrap w-36">時間 / 時段</th>
-                  <th class="py-3 px-4 font-bold min-w-[180px]">景點 / 活動名稱</th>
-                  <th class="py-3 px-4 font-bold min-w-[240px]">交通方式與討論備註</th>
+                  <th class="py-3 px-2 font-bold w-10 text-center">排序</th>
+                  <th class="py-3 px-3 font-bold whitespace-nowrap w-32">天數 / 主題</th>
+                  <th class="py-3 px-2 font-bold whitespace-nowrap w-12 text-center">站次</th>
+                  <th class="py-3 px-3 font-bold whitespace-nowrap w-32">時間 / 時段</th>
+                  <th class="py-3 px-4 font-bold min-w-[170px]">景點 / 活動名稱</th>
+                  <th class="py-3 px-4 font-bold min-w-[260px]">重點筆記與導航路線</th>
                   <th class="py-3 px-4 font-bold whitespace-nowrap text-right w-36">操作</th>
                 </tr>
               </thead>
@@ -179,19 +186,19 @@
         <h3 id="modalTitle" class="font-bold text-base">新增景點</h3>
         <button id="closeModalBtn" class="text-white hover:text-indigo-200 text-xl font-bold">&times;</button>
       </div>
-      <form id="spotForm" class="p-4 sm:p-5 space-y-3.5 text-sm overflow-y-auto flex-1">
+      <form id="spotForm" class="p-4 sm:p-5 space-y-3 text-sm overflow-y-auto flex-1">
         <input type="hidden" id="spotId">
         <input type="hidden" id="spotLat" value="35.6895">
         <input type="hidden" id="spotLng" value="139.6917">
         
         <!-- Place Search & Map Picker -->
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
           <label class="block text-xs font-bold text-slate-700">
             🔍 搜尋地點定位
           </label>
           <div class="flex gap-1.5 relative">
-            <input type="text" id="placeSearchInput" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white" placeholder="輸入景點、餐廳或飯店名稱（如：淺草寺、澀谷SKY）">
-            <button type="button" id="placeSearchBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs whitespace-nowrap shadow-sm transition">
+            <input type="text" id="placeSearchInput" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white" placeholder="輸入景點、餐廳或飯店名稱（如：淺草寺、澀谷SKY）">
+            <button type="button" id="placeSearchBtn" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs whitespace-nowrap shadow-sm transition">
               搜尋
             </button>
           </div>
@@ -208,13 +215,13 @@
           </div>
 
           <!-- Search Results Dropdown -->
-          <div id="searchResultsBox" class="hidden bg-white border border-slate-200 rounded-lg shadow-lg max-h-44 overflow-y-auto divide-y divide-slate-100 text-xs">
+          <div id="searchResultsBox" class="hidden bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-slate-100 text-xs">
             <!-- Populated by JS -->
           </div>
 
           <!-- Mini Interactive Map Picker -->
           <div class="relative rounded-lg overflow-hidden border border-slate-300 shadow-inner">
-            <div id="pickerMap" class="w-full h-44 bg-slate-100 z-10"></div>
+            <div id="pickerMap" class="w-full h-40 bg-slate-100 z-10"></div>
             <div class="bg-slate-800/80 text-white text-[11px] px-2.5 py-1 flex items-center justify-between">
               <span>點選地圖或拖曳地標可微調位置</span>
               <span id="coordPreviewLabel" class="font-mono text-indigo-200"></span>
@@ -225,13 +232,13 @@
         <!-- Spot Details -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">景點 / 活動名稱 <span class="text-rose-500">*</span></label>
-          <input type="text" id="spotName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium" placeholder="例如：東京晴空塔">
+          <input type="text" id="spotName" required class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium" placeholder="例如：東京晴空塔">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">歸屬天數</label>
-            <select id="spotDay" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <select id="spotDay" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
               <option value="1">D1 (週三 - 抵達/晴空塔)</option>
               <option value="2">D2 (週四 - 迪士尼海洋)</option>
               <option value="3">D3 (週五 - 橫濱親子)</option>
@@ -243,13 +250,18 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">建議時間 / 時段</label>
-            <input type="text" id="spotTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例如：14:00~17:00">
+            <input type="text" id="spotTime" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例如：14:00~17:00">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">重點備註 / 交通說明</label>
-          <textarea id="spotNotes" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="填寫票券、轉車方式或討論重點..."></textarea>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">📝 重點筆記（門票提醒、必吃必玩、網址連結）</label>
+          <textarea id="spotNotes" rows="2" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例如：需三個月前抽門票 https://..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">🚇 交通轉乘細節（選填，在卡片上會收合成可展開區塊）</label>
+          <input type="text" id="spotTransit" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs" placeholder="例如：上野站->日比谷線->秋葉原->京王讀賣樂園 約1小時20分">
         </div>
 
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
@@ -510,6 +522,128 @@
       }, 100);
     }
 
+    // Helper: Shorten place name for clean navigation button label
+    function shortenPlaceName(name = "") {
+      return name
+        .replace(/\(.*?\)|（.*?）/g, "")
+        .replace(/Check-in|返回|續住|出發/gi, "")
+        .trim()
+        .slice(0, 10) || "上一站";
+    }
+
+    // Helper: Build Google Maps Navigation URL (Method B: Origin -> Destination)
+    function getSpotNavigation(spot) {
+      const daySpots = spots.filter(s => s.day === spot.day);
+      const idx = daySpots.findIndex(s => s.id === spot.id);
+      let prevSpot = null;
+
+      if (idx > 0) {
+        prevSpot = daySpots[idx - 1];
+      } else if (spot.day > 1) {
+        // First spot of Day 2~7: find the last spot of previous days (usually hotel)
+        for (let d = spot.day - 1; d >= 1; d--) {
+          const prevDaySpots = spots.filter(s => s.day === d);
+          if (prevDaySpots.length > 0) {
+            prevSpot = prevDaySpots[prevDaySpots.length - 1];
+            break;
+          }
+        }
+      }
+
+      const sameLocation = prevSpot && Math.abs(prevSpot.lat - spot.lat) < 0.0005 && Math.abs(prevSpot.lng - spot.lng) < 0.0005;
+      if (prevSpot && !sameLocation) {
+        const mode = (spot.day === 5 && idx > 0) ? "driving" : "transit";
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${prevSpot.lat},${prevSpot.lng}&destination=${spot.lat},${spot.lng}&travelmode=${mode}`;
+        return {
+          hasRoute: true,
+          fromName: shortenPlaceName(prevSpot.name),
+          modeIcon: mode === "driving" ? "🚗" : "🚇",
+          url
+        };
+      }
+
+      return {
+        hasRoute: false,
+        fromName: "",
+        modeIcon: "🗺️",
+        url: `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
+      };
+    }
+
+    // Helper: Smart parse notes, URLs, and collapsible transit steps (Method A + URL button)
+    function parseSpotDetails(spot) {
+      let rawNotes = (spot.notes || "").trim();
+      let transitText = (spot.transit || "").trim();
+      const urls = [];
+
+      // 1. Extract https:// URLs into clean clickable buttons
+      rawNotes = rawNotes.replace(/https?:\/\/[^\s,，)]+/g, (match) => {
+        urls.push(match);
+        return "";
+      }).trim();
+
+      // 2. If transit field is empty, auto-detect step-by-step route containing "->" or "→" inside notes
+      if (!transitText && (rawNotes.includes("->") || rawNotes.includes("→"))) {
+        const segments = rawNotes.split(/[,，\n]+/).map(s => s.trim()).filter(Boolean);
+        const transitSegs = [];
+        const noteSegs = [];
+        segments.forEach(seg => {
+          if (seg.includes("->") || seg.includes("→")) {
+            transitSegs.push(seg);
+          } else {
+            noteSegs.push(seg);
+          }
+        });
+        if (transitSegs.length > 0) {
+          transitText = transitSegs.join(" • ");
+          rawNotes = noteSegs.join("，");
+        }
+      }
+
+      const formattedTransit = transitText.replace(/\s*(->|→)\s*/g, " ➔ ");
+      return {
+        cleanNotes: rawNotes,
+        transitText: formattedTransit,
+        rawTransit: transitText,
+        urls
+      };
+    }
+
+    let sortableListInstance = null;
+    let sortableTableInstance = null;
+    let sortableKanbanInstances = [];
+
+    function applyNewOrderFromIds(orderedIds, targetDayIfChanged = null) {
+      if (!orderedIds || orderedIds.length === 0) return;
+
+      if (currentFilter === "all" && !targetDayIfChanged) {
+        const newSpots = [];
+        orderedIds.forEach(id => {
+          const found = spots.find(s => s.id === id);
+          if (found) newSpots.push(found);
+        });
+        // Append any missing spots just in case
+        spots.forEach(s => {
+          if (!newSpots.some(ns => ns.id === s.id)) newSpots.push(s);
+        });
+        spots = newSpots;
+      } else {
+        // Reordering within a filtered day
+        const subsetMap = new Set(orderedIds);
+        const reorderedSubset = orderedIds.map(id => spots.find(s => s.id === id)).filter(Boolean);
+        let subsetIdx = 0;
+        spots = spots.map(s => {
+          if (subsetMap.has(s.id)) {
+            return reorderedSubset[subsetIdx++];
+          }
+          return s;
+        });
+      }
+
+      saveData("已更新行程順序");
+      renderAll(false);
+    }
+
     // Render Itinerary Cards
     function renderItinerary() {
       const container = document.getElementById("itineraryList");
@@ -544,16 +678,20 @@
         const seqNum = dayCounters[spot.day];
         const cfg = DAYS_CONFIG[spot.day] || { name: `D${spot.day}`, label: "", color: "#64748B", stroke: "#475569" };
         const isActive = activeSpotId === spot.id;
+        const nav = getSpotNavigation(spot);
+        const details = parseSpotDetails(spot);
 
         html += `
           <div class="spot-card rounded-xl p-3.5 border transition cursor-pointer ${isActive ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/30 shadow-md' : 'bg-white border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md'}" data-id="${spot.id}">
             <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2">
+                <!-- Drag Handle -->
+                <span class="drag-handle text-slate-300 hover:text-slate-600 px-1 py-1 text-base select-none" title="按住上下拖曳排序">⠿</span>
                 <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0 shadow-sm" style="background-color: ${cfg.stroke}">
                   ${seqNum}
                 </span>
                 <div>
-                  <h4 class="font-bold text-slate-800 text-sm hover:text-indigo-600 transition">${spot.name}</h4>
+                  <h4 class="font-bold text-slate-800 text-sm hover:text-indigo-600 transition leading-snug">${spot.name}</h4>
                   <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-1">
                     <span class="px-2 py-0.5 rounded-md font-bold text-[11px] text-white" style="background-color: ${cfg.stroke}">${cfg.name}</span>
                     <span class="font-medium text-slate-600">🕒 ${spot.time || '彈性時間'}</span>
@@ -572,19 +710,89 @@
                 </button>
               </div>
             </div>
-            ${spot.notes ? `<p class="mt-2 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed">${spot.notes}</p>` : ''}
+
+            <!-- Main Highlight Notes -->
+            ${details.cleanNotes ? `<p class="mt-2.5 text-xs text-slate-700 bg-slate-50 px-2.5 py-2 rounded-lg border border-slate-100 leading-relaxed">${details.cleanNotes}</p>` : ''}
+
+            <!-- Action Bar: Method B (Google Navigation) + Method A (Accordion Transit) + Ticket URL -->
+            <div class="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5 text-xs">
+              <a href="${nav.url}" target="_blank" rel="noopener noreferrer" class="nav-link-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition">
+                <span>${nav.modeIcon}</span>
+                <span>${nav.hasRoute ? `Google 導航（從 ${nav.fromName}）` : 'Google 地圖查看'}</span>
+                <span class="text-[10px]">↗</span>
+              </a>
+
+              ${details.transitText ? `
+                <button type="button" class="toggle-transit-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                  <span>🚇 轉乘筆記</span>
+                  <span class="transit-arrow text-[10px]">▾</span>
+                </button>
+              ` : ''}
+
+              ${details.urls.map((u, uIdx) => `
+                <a href="${u}" target="_blank" rel="noopener noreferrer" class="nav-link-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition">
+                  <span>🎟️ 網站/購票${details.urls.length > 1 ? uIdx + 1 : ''}</span>
+                  <span class="text-[10px]">↗</span>
+                </a>
+              `).join("")}
+            </div>
+
+            <!-- Collapsible Transit Steps Box (Method A) -->
+            ${details.transitText ? `
+              <div class="transit-detail-box hidden mt-2 p-2.5 rounded-lg bg-indigo-50/60 border border-indigo-100 text-xs text-indigo-950 leading-relaxed">
+                <div class="font-bold text-[11px] text-indigo-700 mb-0.5">🚇 建議轉乘路線：</div>
+                <div>${details.transitText}</div>
+              </div>
+            ` : ''}
           </div>
         `;
       });
 
       container.innerHTML = html;
 
+      // Enable Drag & Drop on Card List
+      if (typeof Sortable !== "undefined") {
+        if (sortableListInstance) sortableListInstance.destroy();
+        sortableListInstance = Sortable.create(container, {
+          animation: 180,
+          handle: ".drag-handle",
+          ghostClass: "sortable-ghost",
+          dragClass: "sortable-drag",
+          onEnd: () => {
+            const ids = Array.from(container.querySelectorAll(".spot-card")).map(el => el.getAttribute("data-id"));
+            applyNewOrderFromIds(ids);
+          }
+        });
+      }
+
       // Card click & Locate button events
       container.querySelectorAll(".spot-card").forEach(card => {
         card.addEventListener("click", (e) => {
-          if (e.target.closest(".edit-btn") || e.target.closest(".delete-btn")) return;
+          if (
+            e.target.closest(".edit-btn") ||
+            e.target.closest(".delete-btn") ||
+            e.target.closest(".nav-link-btn") ||
+            e.target.closest(".toggle-transit-btn") ||
+            e.target.closest(".transit-detail-box") ||
+            e.target.closest(".drag-handle")
+          ) return;
           const id = card.getAttribute("data-id");
           focusSpotOnMap(id);
+        });
+      });
+
+      // Toggle collapsible transit details (Method A)
+      container.querySelectorAll(".toggle-transit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const card = btn.closest(".spot-card");
+          const box = card?.querySelector(".transit-detail-box");
+          const arrow = btn.querySelector(".transit-arrow");
+          if (box) {
+            const isHidden = box.classList.contains("hidden");
+            box.classList.toggle("hidden");
+            if (arrow) arrow.textContent = isHidden ? "▴" : "▾";
+          }
         });
       });
 
@@ -640,15 +848,25 @@
           const marker = L.marker(latlng, { icon }).addTo(markersLayer);
           markerMap[spot.id] = marker;
 
+          const nav = getSpotNavigation(spot);
+          const details = parseSpotDetails(spot);
+
           const popupContent = `
-            <div class="p-1 min-w-[200px]">
+            <div class="p-1 min-w-[220px]">
               <div class="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white inline-block mb-1" style="background-color: ${cfg.stroke}">${cfg.name} • 第 ${idx + 1} 站</div>
               <div class="font-bold text-sm text-slate-800 mt-0.5">${spot.name}</div>
               <div class="text-xs text-slate-600 font-medium mt-1">🕒 ${spot.time || '整天 / 彈性'}</div>
-              ${spot.notes ? `<div class="text-xs text-slate-600 mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 leading-relaxed">${spot.notes}</div>` : ''}
-              <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-end gap-3 text-xs">
-                <button class="popup-edit text-indigo-600 font-bold hover:underline" data-id="${spot.id}">✏️ 編輯</button>
-                <button class="popup-del text-rose-600 font-bold hover:underline" data-id="${spot.id}">🗑️ 刪除</button>
+              ${details.cleanNotes ? `<div class="text-xs text-slate-700 mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 leading-relaxed">${details.cleanNotes}</div>` : ''}
+              ${details.transitText ? `<div class="text-[11px] text-slate-600 mt-1.5 p-2 bg-slate-100 rounded border border-slate-200 leading-relaxed"><span class="font-bold">🚇 轉乘：</span>${details.transitText}</div>` : ''}
+              <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+                <a href="${nav.url}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold hover:underline flex items-center gap-1">
+                  <span>${nav.modeIcon}</span>
+                  <span>Google 導航 ↗</span>
+                </a>
+                <div class="flex items-center gap-2.5">
+                  <button class="popup-edit text-indigo-600 font-bold hover:underline" data-id="${spot.id}">✏️ 編輯</button>
+                  <button class="popup-del text-rose-600 font-bold hover:underline" data-id="${spot.id}">🗑️ 刪除</button>
+                </div>
               </div>
             </div>
           `;
@@ -705,7 +923,7 @@
       const subtitle = document.getElementById("tableCountSubtitle");
       if (!gridContainer || !tbody) return;
 
-      // 1. Render 7-Day Columns Quick Matrix
+      // 1. Render 7-Day Columns Quick Matrix (Supports Drag & Drop within day and across days)
       let gridHtml = "";
       for (let d = 1; d <= 7; d++) {
         const cfg = DAYS_CONFIG[d];
@@ -721,14 +939,17 @@
             <div class="px-3 py-1.5 bg-slate-100 border-b border-slate-200 text-[11px] font-semibold text-slate-600 truncate">
               ${cfg.label}
             </div>
-            <div class="p-2.5 flex-1 space-y-2">
-              ${daySpots.length === 0 ? `<div class="text-xs text-slate-400 text-center py-4">尚無行程</div>` : daySpots.map((s, i) => `
-                <div class="group p-2 rounded-lg bg-slate-50 hover:bg-indigo-50/80 border border-slate-200/80 hover:border-indigo-300 transition cursor-pointer text-xs" data-locate-id="${s.id}">
+            <div class="kanban-day-list p-2.5 flex-1 space-y-2 min-h-[60px]" data-day="${d}">
+              ${daySpots.map((s, i) => `
+                <div class="kanban-card group p-2 rounded-lg bg-slate-50 hover:bg-indigo-50/80 border border-slate-200/80 hover:border-indigo-300 transition cursor-pointer text-xs" data-id="${s.id}" data-locate-id="${s.id}">
                   <div class="flex items-center justify-between gap-1 text-[10px] text-slate-500 font-semibold">
-                    <span>#${i + 1} ${s.time || '彈性'}</span>
+                    <span class="flex items-center gap-1">
+                      <span class="drag-handle text-slate-300 hover:text-slate-600 text-xs select-none" title="按住拖曳排序或跨日移動">⠿</span>
+                      <span>#${i + 1} ${s.time || '彈性'}</span>
+                    </span>
                     <button class="table-edit-btn text-indigo-600 opacity-80 hover:opacity-100 hover:underline" data-id="${s.id}" title="編輯">編輯</button>
                   </div>
-                  <div class="font-bold text-slate-800 mt-0.5 leading-snug">${s.name}</div>
+                  <div class="font-bold text-slate-800 mt-0.5 leading-snug pl-3">${s.name}</div>
                 </div>
               `).join("")}
             </div>
@@ -742,13 +963,50 @@
       }
       gridContainer.innerHTML = gridHtml;
 
+      // Initialize Sortable on 7-Day Kanban Matrix
+      if (sortableKanbanInstances.length > 0) {
+        sortableKanbanInstances.forEach(inst => inst.destroy());
+        sortableKanbanInstances = [];
+      }
+      if (window.Sortable) {
+        gridContainer.querySelectorAll(".kanban-day-list").forEach(colEl => {
+          const inst = Sortable.create(colEl, {
+            group: "kanban-days",
+            animation: 180,
+            ghostClass: "sortable-ghost",
+            dragClass: "sortable-drag",
+            onEnd: () => {
+              // Rebuild spots order and day assignments from all 7 columns
+              const rebuilt = [];
+              gridContainer.querySelectorAll(".kanban-day-list").forEach(listEl => {
+                const colDay = Number(listEl.getAttribute("data-day"));
+                listEl.querySelectorAll(".kanban-card[data-id]").forEach(cardEl => {
+                  const sId = cardEl.getAttribute("data-id");
+                  const found = spots.find(s => s.id === sId);
+                  if (found) {
+                    found.day = colDay;
+                    rebuilt.push(found);
+                  }
+                });
+              });
+              if (rebuilt.length > 0) {
+                spots = rebuilt;
+                saveData("已調整行程順序");
+                renderAll(false);
+              }
+            }
+          });
+          sortableKanbanInstances.push(inst);
+        });
+      }
+
       // 2. Render Detailed Table Rows
       const daysToRender = currentFilter === "all" ? [1,2,3,4,5,6,7] : [Number(currentFilter)];
       const filteredTotal = currentFilter === "all" ? spots.length : spots.filter(s => s.day === Number(currentFilter)).length;
       if (subtitle) {
         subtitle.textContent = currentFilter === "all"
-          ? `顯示全部 7 天，共 ${filteredTotal} 個行程點`
-          : `僅顯示 ${DAYS_CONFIG[Number(currentFilter)]?.name}，共 ${filteredTotal} 個行程點`;
+          ? `顯示全部 7 天，共 ${filteredTotal} 個行程點（可按住左側 ⠿ 上下拖曳調整順序）`
+          : `僅顯示 ${DAYS_CONFIG[Number(currentFilter)]?.name}，共 ${filteredTotal} 個行程點（可按住左側 ⠿ 上下拖曳調整順序）`;
       }
 
       let rowsHtml = "";
@@ -758,7 +1016,8 @@
 
         if (daySpots.length === 0) {
           rowsHtml += `
-            <tr class="hover:bg-slate-50">
+            <tr class="hover:bg-slate-50" data-empty-day="${d}">
+              <td class="py-3 px-2 text-center text-slate-300">-</td>
               <td class="py-3 px-4 align-top">
                 <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white" style="background-color: ${cfg.stroke}">${cfg.name}</span>
                 <div class="text-xs text-slate-500 font-medium mt-1">${cfg.label}</div>
@@ -773,8 +1032,14 @@
         }
 
         daySpots.forEach((spot, idx) => {
+          const nav = getSpotNavigation(spot);
+          const details = parseSpotDetails(spot);
+
           rowsHtml += `
-            <tr class="hover:bg-indigo-50/40 transition ${idx === 0 ? 'border-t-2 border-slate-200' : ''}">
+            <tr class="table-spot-row hover:bg-indigo-50/40 transition ${idx === 0 ? 'border-t-2 border-slate-200' : ''}" data-id="${spot.id}" data-day="${spot.day}">
+              <td class="py-3.5 px-2 align-top text-center">
+                <span class="drag-handle text-slate-300 hover:text-slate-600 text-base select-none px-1.5 py-1" title="按住上下拖曳排序">⠿</span>
+              </td>
               <td class="py-3.5 px-4 align-top">
                 ${idx === 0 ? `
                   <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-sm" style="background-color: ${cfg.stroke}">${cfg.name}</span>
@@ -797,7 +1062,31 @@
                 <div class="font-bold text-slate-800 text-sm">${spot.name}</div>
               </td>
               <td class="py-3.5 px-4 align-top">
-                <div class="text-xs text-slate-600 leading-relaxed">${spot.notes || '<span class="text-slate-400">-</span>'}</div>
+                ${details.cleanNotes ? `<div class="text-xs text-slate-700 leading-relaxed mb-1.5">${details.cleanNotes}</div>` : ''}
+                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                  <a href="${nav.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition">
+                    <span>${nav.modeIcon}</span>
+                    <span>${nav.hasRoute ? `Google 導航（從 ${nav.fromName}）` : 'Google 地圖'}</span>
+                    <span class="text-[10px]">↗</span>
+                  </a>
+                  ${details.transitText ? `
+                    <button type="button" class="table-toggle-transit inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                      <span>🚇 轉乘筆記</span>
+                      <span class="transit-arrow text-[10px]">▾</span>
+                    </button>
+                  ` : ''}
+                  ${details.urls.map((u, uIdx) => `
+                    <a href="${u}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition">
+                      <span>🎟️ 網站/購票${details.urls.length > 1 ? uIdx + 1 : ''}</span>
+                      <span class="text-[10px]">↗</span>
+                    </a>
+                  `).join("")}
+                </div>
+                ${details.transitText ? `
+                  <div class="table-transit-panel hidden mt-1.5 p-2 rounded-lg bg-slate-100/90 border border-slate-200/80 text-xs text-slate-700 leading-relaxed">
+                    <span class="font-bold text-slate-800">🚇 建議換車步驟：</span>${details.transitText}
+                  </div>
+                ` : ''}
               </td>
               <td class="py-3.5 px-4 align-top whitespace-nowrap text-right">
                 <div class="inline-flex items-center gap-1.5">
@@ -819,12 +1108,45 @@
 
       tbody.innerHTML = rowsHtml;
 
+      // Initialize Sortable on Table Body
+      if (sortableTableInstance) {
+        sortableTableInstance.destroy();
+        sortableTableInstance = null;
+      }
+      if (window.Sortable) {
+        sortableTableInstance = Sortable.create(tbody, {
+          handle: ".drag-handle",
+          draggable: ".table-spot-row",
+          animation: 180,
+          ghostClass: "sortable-ghost",
+          dragClass: "sortable-drag",
+          onEnd: () => {
+            const orderedIds = Array.from(tbody.querySelectorAll(".table-spot-row[data-id]")).map(tr => tr.getAttribute("data-id"));
+            applyNewOrderFromIds(orderedIds);
+          }
+        });
+      }
+
       // Bind Table & Matrix listeners
       const tablePanel = document.getElementById("tablePanel");
       tablePanel.querySelectorAll("[data-locate-id]").forEach(el => {
         el.addEventListener("click", (e) => {
-          if (e.target.closest(".table-edit-btn")) return;
+          if (e.target.closest(".table-edit-btn") || e.target.closest(".drag-handle")) return;
           focusSpotOnMap(el.getAttribute("data-locate-id"));
+        });
+      });
+
+      tablePanel.querySelectorAll(".table-toggle-transit").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const td = btn.closest("td");
+          const panel = td?.querySelector(".table-transit-panel");
+          const arrow = btn.querySelector(".transit-arrow");
+          if (panel) {
+            const isHidden = panel.classList.contains("hidden");
+            panel.classList.toggle("hidden");
+            if (arrow) arrow.textContent = isHidden ? "▴" : "▾";
+          }
         });
       });
 
@@ -1057,6 +1379,7 @@
       document.getElementById("spotDay").value = forceDay ? String(forceDay) : (currentFilter === "all" ? "1" : currentFilter);
       document.getElementById("spotTime").value = "";
       document.getElementById("spotNotes").value = "";
+      document.getElementById("spotTransit").value = "";
       document.getElementById("modal").classList.remove("hidden");
       document.getElementById("modal").classList.add("flex");
       initOrUpdatePickerMap(lat, lng);
@@ -1065,6 +1388,7 @@
     function openModalForEdit(id) {
       const spot = spots.find(s => s.id === id);
       if (!spot) return;
+      const details = parseSpotDetails(spot);
       document.getElementById("modalTitle").textContent = "✏️ 編輯行程景點";
       document.getElementById("spotId").value = spot.id;
       document.getElementById("spotName").value = spot.name;
@@ -1072,7 +1396,15 @@
       document.getElementById("searchResultsBox").classList.add("hidden");
       document.getElementById("spotDay").value = spot.day;
       document.getElementById("spotTime").value = spot.time || "";
-      document.getElementById("spotNotes").value = spot.notes || "";
+      // If transit was previously mixed inside notes, pre-split it neatly for the user
+      if (!spot.transit && details.rawTransit) {
+        const noteWithUrls = [details.cleanNotes, ...details.urls].filter(Boolean).join(" ");
+        document.getElementById("spotNotes").value = noteWithUrls;
+        document.getElementById("spotTransit").value = details.rawTransit;
+      } else {
+        document.getElementById("spotNotes").value = spot.notes || "";
+        document.getElementById("spotTransit").value = spot.transit || "";
+      }
       document.getElementById("modal").classList.remove("hidden");
       document.getElementById("modal").classList.add("flex");
       initOrUpdatePickerMap(spot.lat, spot.lng);
@@ -1095,14 +1427,17 @@
     // Export to CSV for Google My Maps
     function exportToCsv() {
       const headers = ["Day", "Name", "Time", "Latitude", "Longitude", "Description"];
-      const rows = spots.map(s => [
-        `D${s.day} (${DAYS_CONFIG[s.day]?.name || ''})`,
-        `"${s.name.replace(/"/g, '""')}"`,
-        `"${(s.time || '').replace(/"/g, '""')}"`,
-        s.lat,
-        s.lng,
-        `"${(s.notes || '').replace(/"/g, '""')}"`
-      ]);
+      const rows = spots.map(s => {
+        const desc = [s.notes, s.transit ? `交通：${s.transit}` : ""].filter(Boolean).join(" | ");
+        return [
+          `D${s.day} (${DAYS_CONFIG[s.day]?.name || ''})`,
+          `"${s.name.replace(/"/g, '""')}"`,
+          `"${(s.time || '').replace(/"/g, '""')}"`,
+          s.lat,
+          s.lng,
+          `"${desc.replace(/"/g, '""')}"`
+        ];
+      });
 
       const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -1276,7 +1611,8 @@
           time: document.getElementById("spotTime").value.trim(),
           lat: parseFloat(document.getElementById("spotLat").value),
           lng: parseFloat(document.getElementById("spotLng").value),
-          notes: document.getElementById("spotNotes").value.trim()
+          notes: document.getElementById("spotNotes").value.trim(),
+          transit: document.getElementById("spotTransit").value.trim()
         };
 
         let msg = "";
