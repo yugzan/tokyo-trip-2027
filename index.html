@@ -152,9 +152,9 @@
             ✨ 東京 7 天 6 夜 親子夢幻樂園之旅
           </h1>
           <!-- Editable Start Date Badge -->
-          <label class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/40 px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition shadow-sm" title="點擊可隨時修改出發日期，D1~D7 日期與星期會自動重算">
+          <label class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm border border-white/40 px-2.5 py-1 sm:py-0.5 rounded-full text-xs font-bold cursor-pointer transition shadow-sm" title="點擊可隨時修改出發日期，D1~D7 日期與星期會自動重算">
             <span>📅 出發：</span>
-            <input type="date" id="startDateInput" value="2027-03-17" class="bg-transparent text-yellow-200 font-extrabold focus:outline-none cursor-pointer text-xs w-[110px]">
+            <input type="date" id="startDateInput" value="2027-03-17" onclick="try{this.showPicker()}catch(e){}" class="bg-transparent text-yellow-200 font-extrabold focus:outline-none cursor-pointer text-xs w-[112px]">
           </label>
         </div>
         <!-- Cute Character Theme Tags -->
@@ -187,21 +187,23 @@
   </header>
 
   <!-- Top Navigation: View Switcher & Day Filter Pills -->
-  <nav class="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 flex-shrink-0">
-    <!-- View Mode Switcher (Desktop & Mobile) -->
-    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 flex-shrink-0">
-      <button id="viewModeSplitBtn" class="px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
-        <span>🗺️</span> 地圖與卡片
-      </button>
-      <button id="viewModeTableBtn" class="px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
-        <span>📊</span> 每日總覽表格
-      </button>
+  <nav class="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-20 flex-shrink-0">
+    <!-- Top Row on Mobile: View Mode Switcher + Mobile Sub-Tabs -->
+    <div class="flex items-center justify-between gap-2 w-full sm:w-auto flex-shrink-0">
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 flex-1 sm:flex-initial">
+        <button id="viewModeSplitBtn" class="flex-1 sm:flex-initial justify-center px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
+          <span>🗺️</span> 地圖與卡片
+        </button>
+        <button id="viewModeTableBtn" class="flex-1 sm:flex-initial justify-center px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <span>📊</span> 每日總覽表格
+        </button>
+      </div>
     </div>
 
-    <!-- Day Filter Pills -->
-    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 flex-1 min-w-0">
-      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap ml-1">天數：</span>
-      <div id="dayFilters" class="flex gap-1.5">
+    <!-- Day Filter Pills: 4x2 Grid on Mobile (Zero horizontal scroll needed!), Flex row on Desktop -->
+    <div class="w-full sm:w-auto sm:flex-1 min-w-0 flex items-center">
+      <span class="hidden md:inline text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap mr-1.5">天數：</span>
+      <div id="dayFilters" class="grid grid-cols-4 sm:flex gap-1.5 w-full sm:w-auto sm:overflow-x-auto py-0.5">
         <!-- Generated via JS -->
       </div>
     </div>
@@ -714,11 +716,11 @@
       return "";
     }
 
-    // Render Filters (Two-line pill showing "D1 週三" and "03/17" below)
+    // Render Filters (4x2 Grid on Mobile for effortless tapping without horizontal scroll; Flex row on Desktop)
     function renderFilters() {
       const container = document.getElementById("dayFilters");
       let html = `
-        <button data-day="all" class="filter-btn px-3 py-1.5 text-xs font-bold rounded-xl transition whitespace-nowrap flex flex-col items-center justify-center leading-tight ${currentFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+        <button data-day="all" class="filter-btn px-1.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold rounded-xl transition whitespace-nowrap flex flex-col items-center justify-center leading-tight ${currentFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
           <span>全部天數</span>
           <span class="text-[10px] opacity-80 font-medium mt-0.5">共 ${spots.length} 站</span>
         </button>
@@ -729,13 +731,13 @@
         const isCurrent = currentFilter === String(d);
         const count = spots.filter(s => s.day === d).length;
         html += `
-          <button data-day="${d}" class="filter-btn px-3 py-1 text-xs font-bold rounded-xl transition whitespace-nowrap flex flex-col items-center justify-center leading-tight ${isCurrent ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" style="${isCurrent ? 'background-color:' + cfg.stroke : ''}">
+          <button data-day="${d}" class="filter-btn px-1.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold rounded-xl transition whitespace-nowrap flex flex-col items-center justify-center leading-tight ${isCurrent ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" style="${isCurrent ? 'background-color:' + cfg.stroke : ''}">
             <div class="flex items-center gap-1">
-              <span class="w-2 h-2 rounded-full inline-block border border-white/60" style="background-color: ${cfg.color}"></span>
+              <span class="w-2 h-2 rounded-full inline-block border border-white/60 flex-shrink-0" style="background-color: ${cfg.color}"></span>
               <span>${cfg.name}</span>
               <span class="opacity-75 text-[10px]">(${count})</span>
             </div>
-            <div class="text-[11px] font-semibold mt-0.5 ${isCurrent ? 'text-amber-200' : 'text-slate-500'}">${cfg.dateStr}</div>
+            <div class="text-[10px] sm:text-[11px] font-semibold mt-0.5 ${isCurrent ? 'text-amber-200' : 'text-slate-500'}">${cfg.dateStr}</div>
           </button>
         `;
       }
@@ -1122,8 +1124,9 @@
           animation: 180,
           filter: "button, a, input, .nav-link-btn, .toggle-transit-btn, .transit-detail-box",
           preventOnFilter: false,
-          delay: 120,
+          delay: 300,
           delayOnTouchOnly: true,
+          touchStartThreshold: 8,
           ghostClass: "sortable-ghost",
           dragClass: "sortable-drag",
           onEnd: () => {
@@ -1396,8 +1399,9 @@
             animation: 180,
             filter: "button, a",
             preventOnFilter: false,
-            delay: 120,
+            delay: 300,
             delayOnTouchOnly: true,
+            touchStartThreshold: 8,
             ghostClass: "sortable-ghost",
             dragClass: "sortable-drag",
             onEnd: () => {
@@ -1546,8 +1550,9 @@
           draggable: ".table-spot-row",
           filter: "button, a, input, .table-toggle-transit, .table-transit-panel",
           preventOnFilter: false,
-          delay: 120,
+          delay: 300,
           delayOnTouchOnly: true,
+          touchStartThreshold: 8,
           animation: 180,
           ghostClass: "sortable-ghost",
           dragClass: "sortable-drag",
