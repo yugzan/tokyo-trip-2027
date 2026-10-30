@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>東京7天6夜親子遊 - 視覺化行程地圖與路線編輯器</title>
+  <title>東京7天6夜 親子夢幻樂園之旅 - 視覺化行程地圖與路線編輯器</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -285,6 +285,12 @@
       </button>
       <button id="exportCsvBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="匯出相容 Google My Maps 的 CSV">
         <span>📥</span> <span class="hidden md:inline">匯出地圖檔</span>
+      </button>
+      <button id="openJsonModalBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="把目前行程轉成 JSON，一鍵複製">
+        <span>📋</span> <span class="hidden md:inline">行程 JSON</span>
+      </button>
+      <button id="openPromptModalBtn" type="button" class="bg-pink-200 hover:bg-pink-300 text-pink-900 font-extrabold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border-2 border-white shadow-sm transition" title="編輯 / 複製旅行手冊提示詞">
+        <span>🌸</span> <span class="hidden md:inline">手冊提示詞</span>
       </button>
       <button id="resetBtn" class="bg-black/20 hover:bg-black/35 text-white/90 px-2.5 py-1.5 rounded-full text-xs transition border border-white/20" title="重置為初始預設行程">
         重置
@@ -597,6 +603,61 @@
           <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow">儲存</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 📋 Trip JSON Export Modal -->
+  <div id="jsonModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-100 max-h-[92vh] flex flex-col">
+      <div class="bg-indigo-600 text-white px-5 py-3.5 flex justify-between items-center flex-shrink-0">
+        <h3 class="font-bold text-base">📋 目前行程 JSON</h3>
+        <button type="button" class="close-json-modal text-white hover:text-indigo-200 text-xl font-bold">&times;</button>
+      </div>
+      <div class="p-4 space-y-2.5 flex-1 flex flex-col min-h-0 text-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+            <button type="button" data-json-format="grouped" class="json-format-btn px-2.5 py-1 rounded-md font-bold transition">依天分組（給 AI 用）</button>
+            <button type="button" data-json-format="raw" class="json-format-btn px-2.5 py-1 rounded-md font-bold transition">原始資料</button>
+          </div>
+          <span id="jsonStatsLabel" class="text-xs text-slate-500 font-medium"></span>
+        </div>
+        <textarea id="jsonOutput" readonly spellcheck="false" class="flex-1 min-h-[45vh] w-full p-3 font-mono text-xs border border-slate-300 rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <button type="button" id="jsonEditPromptBtn" class="px-3 py-2 text-pink-600 hover:text-pink-800 text-xs font-bold">🌸 編輯提示詞 →</button>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="downloadJsonBtn" class="px-3.5 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-xs font-bold">⬇️ 下載 .json</button>
+            <button type="button" id="copyJsonBtn" class="px-3.5 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-xs font-bold">📋 只複製 JSON</button>
+            <button type="button" id="copyJsonWithPromptBtn" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-lg shadow text-xs">🌸 複製 提示詞 + JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🌸 Handbook Prompt Editor Modal -->
+  <div id="promptModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-100 max-h-[92vh] flex flex-col">
+      <div class="bg-gradient-to-r from-pink-500 via-rose-400 to-amber-400 text-white px-5 py-3.5 flex justify-between items-center flex-shrink-0">
+        <h3 class="font-bold text-base">🌸 旅行手冊提示詞</h3>
+        <button type="button" class="close-prompt-modal text-white hover:text-pink-100 text-xl font-bold">&times;</button>
+      </div>
+      <div class="p-4 space-y-2.5 flex-1 flex flex-col min-h-0 text-sm">
+        <div class="text-xs text-slate-600 bg-pink-50 border border-pink-200 rounded-lg px-3 py-2 leading-relaxed">
+          💡 可直接修改後按「儲存」，會同步到雲端給全家共用。提示詞中的 <code class="px-1 bg-white rounded border border-pink-200 font-bold text-pink-700">{{TRIP_JSON}}</code> 會在「複製提示詞 + 行程 JSON」時自動替換成最新行程。
+        </div>
+        <textarea id="promptEditor" spellcheck="false" class="flex-1 min-h-[45vh] w-full p-3 font-mono text-xs border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none"></textarea>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div class="flex items-center gap-2">
+            <button type="button" id="resetPromptBtn" class="px-3 py-2 text-slate-500 hover:text-rose-600 text-xs font-semibold">↺ 還原預設</button>
+            <span id="promptSaveStatus" class="text-[11px] text-slate-400"></span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="savePromptBtn" class="px-3.5 py-2 border border-pink-300 text-pink-700 bg-pink-50 hover:bg-pink-100 rounded-lg text-xs font-bold">💾 儲存</button>
+            <button type="button" id="copyPromptBtn" class="px-3.5 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-xs font-bold">📋 複製提示詞</button>
+            <button type="button" id="copyPromptWithJsonBtn" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-lg shadow text-xs">🌸 複製提示詞 + 行程 JSON</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2877,6 +2938,192 @@
       }
     }
 
+    // ==========================================
+    // 📋 Trip JSON Export & 🌸 Handbook Prompt Editor
+    // ==========================================
+    const HANDBOOK_PROMPT_KEY = "tokyo_trip_handbook_prompt";
+    let handbookPromptRef = null;
+    let currentJsonFormat = "grouped";
+
+    function buildTripJson(format = "grouped") {
+      if (format === "raw") {
+        return { startDate: tripStartDate, spots };
+      }
+      const days = [];
+      for (let d = 1; d <= 7; d++) {
+        const cfg = DAYS_CONFIG[d];
+        const daySpots = spots.filter(s => s.day === d);
+        days.push({
+          day: d,
+          date: cfg.dateStr,
+          weekday: cfg.name.replace(`D${d} `, ""),
+          theme: cfg.label,
+          themeColor: cfg.color,
+          spots: daySpots.map((s, idx) => {
+            const nav = getSpotNavigation(s);
+            const details = parseSpotDetails(s);
+            const item = {
+              order: idx + 1,
+              time: s.time || "",
+              name: s.name,
+              notes: details.cleanNotes || "",
+              transit: details.rawTransit || "",
+              transportFromPrev: nav.hasRoute ? `${nav.transport.icon} ${nav.transport.lineName}` : "",
+              lat: Number(s.lat),
+              lng: Number(s.lng)
+            };
+            if (details.urls.length) item.links = details.urls;
+            return item;
+          })
+        });
+      }
+      return {
+        trip: "2027 東京家族親子之旅",
+        startDate: tripStartDate,
+        totalDays: 7,
+        days
+      };
+    }
+
+    function getTripJsonText(format = currentJsonFormat) {
+      return JSON.stringify(buildTripJson(format), null, 2);
+    }
+
+    async function copyTextToClipboard(text, successMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMsg);
+      } catch (e) {
+        // Fallback for non-secure contexts
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand("copy");
+          showToast(successMsg);
+        } catch (err) {
+          showToast("⚠️ 複製失敗，請手動全選複製");
+        }
+        document.body.removeChild(ta);
+      }
+    }
+
+    function refreshJsonModal() {
+      document.getElementById("jsonOutput").value = getTripJsonText(currentJsonFormat);
+      document.querySelectorAll(".json-format-btn").forEach(btn => {
+        const active = btn.getAttribute("data-json-format") === currentJsonFormat;
+        btn.classList.toggle("bg-white", active);
+        btn.classList.toggle("text-indigo-700", active);
+        btn.classList.toggle("shadow-sm", active);
+        btn.classList.toggle("text-slate-500", !active);
+      });
+      const dayCount = new Set(spots.map(s => s.day)).size;
+      document.getElementById("jsonStatsLabel").textContent = `共 ${spots.length} 個景點 • ${dayCount} 天`;
+    }
+
+    function openJsonModal() {
+      refreshJsonModal();
+      const m = document.getElementById("jsonModal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
+    }
+
+    function closeJsonModal() {
+      const m = document.getElementById("jsonModal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    function downloadTripJson() {
+      const blob = new Blob([getTripJsonText(currentJsonFormat)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `tokyo_trip_${tripStartDate}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("⬇️ 已下載行程 JSON");
+    }
+
+    function getDefaultHandbookPrompt() {
+      return (document.getElementById("defaultHandbookPrompt")?.textContent || "").trim();
+    }
+
+    function getSavedHandbookPrompt() {
+      return localStorage.getItem(HANDBOOK_PROMPT_KEY) || getDefaultHandbookPrompt();
+    }
+
+    function setPromptSaveStatus(text) {
+      const el = document.getElementById("promptSaveStatus");
+      if (el) el.textContent = text;
+    }
+
+    function openPromptModal() {
+      document.getElementById("promptEditor").value = getSavedHandbookPrompt();
+      setPromptSaveStatus(localStorage.getItem(HANDBOOK_PROMPT_KEY) ? "使用已儲存版本" : "使用預設版本");
+      const m = document.getElementById("promptModal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
+    }
+
+    function isPromptDirty() {
+      return document.getElementById("promptEditor").value !== getSavedHandbookPrompt();
+    }
+
+    function closePromptModal() {
+      if (isPromptDirty() && !confirm("提示詞有修改尚未儲存，確定要關閉嗎？")) return;
+      const m = document.getElementById("promptModal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    function saveHandbookPrompt() {
+      const text = document.getElementById("promptEditor").value;
+      try { localStorage.setItem(HANDBOOK_PROMPT_KEY, text); } catch (e) {}
+      if (handbookPromptRef) {
+        handbookPromptRef.set(text).then(() => {
+          setPromptSaveStatus(`✅ 已儲存並同步雲端 ${new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}`);
+        }).catch(() => {
+          setPromptSaveStatus("⚠️ 雲端同步失敗，已存在本機");
+        });
+      } else {
+        setPromptSaveStatus("✅ 已儲存於本機");
+      }
+      showToast("💾 手冊提示詞已儲存");
+    }
+
+    function resetHandbookPrompt() {
+      if (!confirm("確定要將提示詞還原為預設內容嗎？（需再按「儲存」才會生效）")) return;
+      document.getElementById("promptEditor").value = getDefaultHandbookPrompt();
+      setPromptSaveStatus("已還原預設（尚未儲存）");
+    }
+
+    function buildPromptWithJson(promptText = getSavedHandbookPrompt()) {
+      const prompt = promptText;
+      const json = getTripJsonText("grouped");
+      return prompt.includes("{{TRIP_JSON}}")
+        ? prompt.split("{{TRIP_JSON}}").join(json)
+        : `${prompt}\n\n## 行程 JSON\n\n\`\`\`json\n${json}\n\`\`\``;
+    }
+
+    function initHandbookPromptSync() {
+      try {
+        if (!db) return;
+        handbookPromptRef = db.ref("tokyo_trip/handbookPrompt");
+        handbookPromptRef.on("value", (snap) => {
+          const val = snap.val();
+          if (typeof val === "string" && val.trim()) {
+            try { localStorage.setItem(HANDBOOK_PROMPT_KEY, val); } catch (e) {}
+          }
+        });
+      } catch (e) {}
+    }
+
     // Initialize application
     window.addEventListener("DOMContentLoaded", () => {
       // Load Font Size & Theme preferences
@@ -2890,6 +3137,48 @@
 
       // Start Firebase Realtime Database
       initFirebase();
+      initHandbookPromptSync();
+
+      // 📋 Trip JSON & 🌸 Handbook Prompt Listeners
+      document.getElementById("openJsonModalBtn")?.addEventListener("click", openJsonModal);
+      document.querySelectorAll(".close-json-modal").forEach(b => b.addEventListener("click", closeJsonModal));
+      document.querySelectorAll(".json-format-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentJsonFormat = btn.getAttribute("data-json-format");
+          refreshJsonModal();
+        });
+      });
+      document.getElementById("copyJsonBtn")?.addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("jsonOutput").value, "📋 已複製行程 JSON！");
+      });
+      document.getElementById("downloadJsonBtn")?.addEventListener("click", downloadTripJson);
+      document.getElementById("copyJsonWithPromptBtn")?.addEventListener("click", () => {
+        copyTextToClipboard(buildPromptWithJson(), "🌸 已複製「目前提示詞 + 最新行程 JSON」，直接貼給 AI 即可！");
+      });
+      document.getElementById("jsonEditPromptBtn")?.addEventListener("click", () => {
+        closeJsonModal();
+        openPromptModal();
+      });
+
+      document.getElementById("openPromptModalBtn")?.addEventListener("click", openPromptModal);
+      document.querySelectorAll(".close-prompt-modal").forEach(b => b.addEventListener("click", closePromptModal));
+      document.getElementById("savePromptBtn")?.addEventListener("click", saveHandbookPrompt);
+      document.getElementById("resetPromptBtn")?.addEventListener("click", resetHandbookPrompt);
+      document.getElementById("promptEditor")?.addEventListener("input", () => {
+        setPromptSaveStatus(isPromptDirty() ? "● 尚未儲存" : "");
+      });
+      document.getElementById("promptEditor")?.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          saveHandbookPrompt();
+        }
+      });
+      document.getElementById("copyPromptBtn")?.addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("promptEditor").value, "📋 已複製手冊提示詞！");
+      });
+      document.getElementById("copyPromptWithJsonBtn")?.addEventListener("click", () => {
+        copyTextToClipboard(buildPromptWithJson(document.getElementById("promptEditor").value), "🌸 已複製「提示詞 + 最新行程 JSON」，直接貼給 AI 即可！");
+      });
 
       // Start Date Picker Listener
       document.getElementById("startDateInput")?.addEventListener("change", (e) => {
@@ -3022,6 +3311,45 @@
         }
       });
     });
+  </script>
+
+  <!-- 🌸 預設旅行手冊提示詞（使用者可在網頁上編輯覆寫；{{TRIP_JSON}} 會被替換成最新行程） -->
+  <script type="text/plain" id="defaultHandbookPrompt">
+# 角色
+你是日本親子旅行社的視覺設計師，也是精通 CSS 列印排版的前端工程師。
+請把下方【行程 JSON】做成一本「旅のしおり（旅行手冊）」——繽紛、可愛、像旅行社給客人的行程表。
+
+# 輸出
+- 只輸出一個完整的單一 HTML 檔（<!DOCTYPE html> 開頭），CSS 全部內嵌。
+- 用瀏覽器開啟後按 Ctrl+P →「另存為 PDF」即可得到 A4 手冊。
+- 不使用任何外部圖片、不需要 API Key；裝飾全部用 CSS（漸層、圓點、虛線、陰影）、Emoji 或內嵌 SVG 完成。
+- 可使用 Google Fonts：Zen Maru Gothic / M PLUS Rounded 1c（圓體可愛感）。
+
+# A4 列印規則（必須遵守）
+- @page { size: A4 portrait; margin: 0; }，每頁用 .page { width: 210mm; height: 297mm; padding: 12mm; overflow: hidden; break-after: page; }
+- 加上 -webkit-print-color-adjust: exact; print-color-adjust: exact; 確保背景色會印出。
+- 每個景點卡片 break-inside: avoid，不可被切成兩半。
+- 螢幕預覽時頁與頁之間留灰色間距、加陰影，像在看紙本。
+
+# 手冊結構
+1. 封面：大標題「2027 東京家族親子冒險之旅」、副標「旅のしおり」、出發日期～回程日期、富士山 / 晴空塔 / 樂園的 SVG 插畫、家族成員簽名欄。
+2. 7 天總覽：一頁表格或時間軸，每天一列，顯示日期、主題、主要景點、交通方式 Emoji。
+3. 每日行程（每天一頁，用 JSON 的 themeColor 當該頁主色）：
+   - 頁首：大大的「Day N」、日期星期、當日主題、紙膠帶裝飾。
+   - 時間軸：時間 → 景點名稱 → 交通方式（transportFromPrev）→ 重點筆記（notes）→ 轉乘步驟（transit，用 ➔ 串接）。
+   - 每個景點前放一個可以打勾的 ☐ 方框。
+   - 自適應留白：當天景點 ≤ 3 個時，頁面下方補上「💮 紀念印章欄」「📸 今日照片黏貼框」「🍙 今日美食 Memo」；景點 ≥ 6 個時改用精簡排版確保塞進一頁。
+4. 附錄：🎒 行李 Checklist（護照、VJW QR Code、日幣、藥品、充電器/轉接頭、兒童推車）、🆘 緊急聯絡（110 / 119 / 駐日代表處）、空白 Memo 頁。
+
+# 風格
+- 底色米白手帳紙（#FFFBF5）＋淡淡圓點格紋。
+- 粉彩馬卡龍配色，圓角卡片、手寫感標題、適度加入日文小標（今日のハイライト、メモ、持ち物チェック）。
+- 文字使用繁體中文。
+
+# 行程 JSON
+```json
+{{TRIP_JSON}}
+```
   </script>
 </body>
 </html>
