@@ -262,9 +262,9 @@
 
     <div class="flex items-center gap-1.5 sm:gap-2 relative z-10 flex-wrap">
       <!-- Google 登入（登入後才能修改行程） -->
-      <button id="authBtn" type="button" class="bg-white hover:bg-slate-100 text-slate-800 font-bold pl-1 pr-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 border-2 border-white shadow-sm transition" title="用 Google 帳號登入後才能修改行程">
-        <span id="authAvatar" class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden text-[11px]">G</span>
-        <span id="authLabel">登入</span>
+      <button id="authBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold pl-1 pr-3 py-1 rounded-full text-xs flex items-center gap-1.5 border border-white/40 transition" title="用 Google 帳號登入後才能修改行程">
+        <span id="authAvatar" class="w-6 h-6 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0"><svg viewBox="0 0 48 48" class="w-3.5 h-3.5"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.2 5.6c4.2-3.9 7.1-9.7 7.1-17.1z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.8-6C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.2-5.6c-2 1.4-4.7 2.3-8.7 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg></span>
+        <span id="authLabel" class="max-w-[6rem] truncate">登入</span>
       </button>
       <!-- Sync Status Indicator -->
       <div id="syncBadge" class="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-black/20 backdrop-blur-sm border border-white/30 text-white">
@@ -272,26 +272,20 @@
         <span id="syncText">行程自動儲存</span>
       </div>
       <!-- Rail Island Style: 3-Tier Font Scaling Button -->
-      <button id="fontSizeBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="切換字級大小（標準 / 大字 / 特大，適合長輩與手機閱讀）">
+      <button id="fontSizeBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white w-8 h-8 rounded-full text-sm flex items-center justify-center border border-white/40 transition" title="切換字級大小（標準 / 大字 / 特大，適合長輩與手機閱讀）">
         <span>🔠</span>
-        <span id="fontSizeLabel">標準字</span>
       </button>
       <!-- Rail Island Style: Night Train Dark Mode Button -->
-      <button id="themeToggleBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="切換亮色琺瑯 / 夜行深色地圖模式">
+      <button id="themeToggleBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white w-8 h-8 rounded-full text-sm flex items-center justify-center border border-white/40 transition" title="切換亮色琺瑯 / 夜行深色地圖模式">
         <span id="themeIcon">🌙</span>
-        <span id="themeLabel" class="hidden sm:inline">夜行</span>
       </button>
       <!-- Deep-Link Share Current View Button -->
-      <button id="shareViewBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="一鍵複製/分享目前天數與景點畫面連結給家人">
+      <button id="shareViewBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white w-8 h-8 rounded-full text-sm flex items-center justify-center border border-white/40 transition" title="一鍵複製/分享目前天數與景點畫面連結給家人">
         <span>🔗</span>
-        <span class="hidden sm:inline">分享畫面</span>
       </button>
-      <!-- 旅のしおり：瀏覽 / 下載手冊 -->
+      <!-- 旅のしおり：瀏覽手冊 -->
       <a id="viewShioriBtn" href="shiori.html" target="_blank" rel="noopener" class="bg-amber-300 hover:bg-amber-400 text-slate-900 font-extrabold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border-2 border-white shadow-sm transition" title="開啟旅のしおり（可 Ctrl+P 另存 PDF）">
         <span>📖</span> <span class="hidden sm:inline">旅遊手冊</span>
-      </a>
-      <a id="downloadShioriBtn" href="shiori.html" download="2027東京親子旅のしおり.html" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="下載旅遊手冊網頁檔（離線可開）">
-        <span>⬇️</span> <span class="hidden md:inline">下載手冊</span>
       </a>
       <button id="exportCsvBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 border border-white/40 transition" title="匯出相容 Google My Maps 的 CSV">
         <span>📥</span> <span class="hidden md:inline">匯出地圖檔</span>
@@ -814,6 +808,7 @@
         return;
       }
       const auth = firebase.auth();
+      const GOOGLE_G_SVG = document.getElementById("authAvatar").innerHTML;
       btn.addEventListener("click", () => {
         if (currentUser) {
           if (confirm(`目前登入：${currentUser.email}\n要登出嗎？`)) auth.signOut();
@@ -828,7 +823,7 @@
         const avatar = document.getElementById("authAvatar");
         const label = document.getElementById("authLabel");
         if (user) {
-          avatar.innerHTML = user.photoURL ? `<img src="${user.photoURL}" alt="" class="w-5 h-5" referrerpolicy="no-referrer">` : "🙂";
+          avatar.innerHTML = user.photoURL ? `<img src="${user.photoURL}" alt="" class="w-6 h-6" referrerpolicy="no-referrer">` : "🙂";
           label.textContent = (user.displayName || user.email).split(" ")[0];
           btn.title = `已登入：${user.email}（點擊可登出）`;
           // 登入紀錄：Firebase 主控台 → Realtime Database → tokyo_trip/users 可看到誰登入過
@@ -840,7 +835,7 @@
             }).catch(() => {});
           }
         } else {
-          avatar.textContent = "G";
+          avatar.innerHTML = GOOGLE_G_SVG;
           label.textContent = "登入";
           btn.title = "用 Google 帳號登入後才能修改行程";
         }
@@ -2634,6 +2629,7 @@
       }
       const label = document.getElementById("fontSizeLabel");
       if (label) label.textContent = FONT_SIZE_LABELS[fs] || "標準";
+      document.getElementById("fontSizeBtn")?.setAttribute("title", `字級：${FONT_SIZE_LABELS[fs] || "標準"}（點擊切換 標準 / 大字 / 特大）`);
       localStorage.setItem(FONT_SIZE_KEY, fs);
     }
 
