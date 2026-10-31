@@ -1,10 +1,10 @@
 {
   "rules": {
     "tokyo_trip": {
-      "spots": { ".read": true, ".write": "auth != null" },
-      "startDate": { ".read": true, ".write": "auth != null" },
-      "handbookPrompt": { ".read": true, ".write": "auth != null" },
-      "lastUpdate": { ".read": true, ".write": "auth != null" },
+      "spots": { ".read": "auth != null", ".write": "auth != null" },
+      "startDate": { ".read": "auth != null", ".write": "auth != null" },
+      "handbookPrompt": { ".read": "auth != null", ".write": "auth != null" },
+      "lastUpdate": { ".read": "auth != null", ".write": "auth != null" },
       "users": {
         "$uid": {
           ".read": "auth != null && auth.uid === $uid",

@@ -152,6 +152,15 @@
   </style>
 </head>
 <body class="cute-bg-pattern text-slate-800 h-screen flex flex-col overflow-hidden">
+  <!-- 🔒 登入門檻：未登入前遮住整個頁面 -->
+  <div id="loginGate" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a8a,#db2777);">
+    <div style="background:#fff;border-radius:24px;padding:32px 28px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+      <div style="font-size:48px;">🗼🔒</div>
+      <h1 style="font-size:20px;font-weight:900;margin:12px 0 6px;">2027 東京家族之旅</h1>
+      <p style="font-size:14px;color:#64748b;margin-bottom:20px;">此行程僅限家人查看，請先登入</p>
+      <button id="loginGateBtn" type="button" style="width:100%;padding:12px;border-radius:999px;border:1px solid #cbd5e1;font-weight:700;background:#fff;cursor:pointer;">使用 Google 帳號登入</button>
+    </div>
+  </div>
 
   <!-- Cute Theme Park Header -->
   <header class="kawaii-header text-white shadow-md z-20 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 border-b-2 border-white/30">
@@ -246,7 +255,7 @@
           <!-- Editable Start Date Badge -->
           <label class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm border border-white/40 px-2.5 py-1 sm:py-0.5 rounded-full text-xs font-bold cursor-pointer transition shadow-sm" title="點擊可隨時修改出發日期，D1~D7 日期與星期會自動重算">
             <span>📅 出發：</span>
-            <input type="date" id="startDateInput" value="2027-03-17" onclick="try{this.showPicker()}catch(e){}" class="bg-transparent text-yellow-200 font-extrabold focus:outline-none cursor-pointer text-xs w-[112px]">
+            <input type="date" id="startDateInput" value="2027-03-10" onclick="try{this.showPicker()}catch(e){}" class="bg-transparent text-yellow-200 font-extrabold focus:outline-none cursor-pointer text-xs w-[112px]">
           </label>
         </div>
         <!-- Cute Character Theme Tags -->
@@ -667,17 +676,17 @@
 
   <script>
     // Day Configuration with distinct colors & dynamic date calculation
-    let tripStartDate = "2027-03-17";
+    let tripStartDate = "2027-03-10";
     const WEEKDAY_NAMES = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
 
     const DAYS_CONFIG = {
-      1: { name: "D1 週三", dateStr: "03/17", fullName: "D1 週三 03/17", label: "抵達 & 晴空塔", color: "#3B82F6", stroke: "#2563EB" },
-      2: { name: "D2 週四", dateStr: "03/18", fullName: "D2 週四 03/18", label: "迪士尼海洋", color: "#EC4899", stroke: "#DB2777" },
-      3: { name: "D3 週五", dateStr: "03/19", fullName: "D3 週五 03/19", label: "橫濱親子遊", color: "#10B981", stroke: "#059669" },
-      4: { name: "D4 週六", dateStr: "03/20", fullName: "D4 週六 03/20", label: "樂園二選一", color: "#F59E0B", stroke: "#D97706" },
-      5: { name: "D5 週日", dateStr: "03/21", fullName: "D5 週日 03/21", label: "河口湖自駕", color: "#8B5CF6", stroke: "#7C3AED" },
-      6: { name: "D6 週一", dateStr: "03/22", fullName: "D6 週一 03/22", label: "御殿場還車 & 採買", color: "#06B6D4", stroke: "#0891B2" },
-      7: { name: "D7 週二", dateStr: "03/23", fullName: "D7 週二 03/23", label: "上野採買 & 返台", color: "#64748B", stroke: "#475569" }
+      1: { name: "D1 週三", dateStr: "03/10", fullName: "D1 週三 03/10", label: "抵達 & 晴空塔", color: "#3B82F6", stroke: "#2563EB" },
+      2: { name: "D2 週四", dateStr: "03/11", fullName: "D2 週四 03/11", label: "迪士尼海洋", color: "#EC4899", stroke: "#DB2777" },
+      3: { name: "D3 週五", dateStr: "03/12", fullName: "D3 週五 03/12", label: "橫濱親子遊", color: "#10B981", stroke: "#059669" },
+      4: { name: "D4 週六", dateStr: "03/13", fullName: "D4 週六 03/13", label: "樂園二選一", color: "#F59E0B", stroke: "#D97706" },
+      5: { name: "D5 週日", dateStr: "03/14", fullName: "D5 週日 03/14", label: "河口湖自駕", color: "#8B5CF6", stroke: "#7C3AED" },
+      6: { name: "D6 週一", dateStr: "03/15", fullName: "D6 週一 03/15", label: "御殿場還車 & 採買", color: "#06B6D4", stroke: "#0891B2" },
+      7: { name: "D7 週二", dateStr: "03/16", fullName: "D7 週二 03/16", label: "上野採買 & 返台", color: "#64748B", stroke: "#475569" }
     };
 
     function refreshDaysConfigFromDate(startDateStr) {
@@ -713,7 +722,7 @@
 
     // Pre-loaded initial Tokyo itinerary data
     const INITIAL_SPOTS = [
-      { id: "s1", day: 1, name: "成田國際機場", time: "12:35 降落", lat: 35.771986, lng: 140.392850, notes: "搭乘 Skyliner 直達上野 (約41~51分)" },
+      { id: "s1", day: 1, name: "成田國際機場", time: "12:35 降落 (JX800)", lat: 35.771986, lng: 140.392850, notes: "JX800 08:25 桃園T1 → 12:35 成田T2；搭乘 Skyliner 直達上野 (約41~51分)" },
       { id: "s2", day: 1, name: "上野飯店 Check-in", time: "約 14:30", lat: 35.714167, lng: 139.777400, notes: "推薦住上野，放行李後輕裝出發" },
       { id: "s3", day: 1, name: "東京晴空塔 & 墨田水族館", time: "16:00~20:00", lat: 35.710063, lng: 139.810700, notes: "晴空塔逛街＋墨田水族館，打烊約 21:00" },
       
@@ -738,7 +747,7 @@
       { id: "s18", day: 6, name: "上野市區最後採買", time: "15:30~20:00", lat: 35.711500, lng: 139.774700, notes: "入住上野，集中在阿美橫町、多慶屋採購" },
 
       { id: "s19", day: 7, name: "阿美橫町晨間最後補貨", time: "10:00~11:30", lat: 35.711500, lng: 139.774700, notes: "藥妝與零食最後打包" },
-      { id: "s20", day: 7, name: "出發成田機場 (15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "搭乘 Skyliner 直達成田，13:10前抵達櫃檯" }
+      { id: "s20", day: 7, name: "出發成田機場 (JX803 15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "JX803 成田T2 15:40 → 18:45 桃園T1；搭乘 Skyliner 直達成田T2，13:10前抵達櫃檯" }
     ];
 
     // Auto-upgrade legacy default rental spots (s13 & s17) or mislocated Kawaguchiko Toyota Rent a Car
@@ -799,6 +808,7 @@
       appId: "1:270028464612:web:437c3280648014ff9a67f1"
     };
     let currentUser = null;
+    let cloudSyncStarted = false;
     let lastCloudSpots = null; // 最後一次雲端快照，未登入時用來還原誤改
 
     function initAuth() {
@@ -818,8 +828,30 @@
           if (err.code !== "auth/popup-closed-by-user") showToast("登入失敗：" + err.code);
         });
       });
+      document.getElementById("loginGateBtn")?.addEventListener("click", () => {
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch((err) => {
+          if (err.code !== "auth/popup-closed-by-user") alert("登入失敗：" + err.code);
+        });
+      });
       auth.onAuthStateChanged((user) => {
+        const wasLoggedIn = !!currentUser;
         currentUser = user;
+        // 🔒 登入門檻：未登入顯示遮罩、清除本機快取；登入後才啟動雲端同步
+        const gate = document.getElementById("loginGate");
+        if (user) {
+          if (gate) gate.style.display = "none";
+          if (!cloudSyncStarted) {
+            cloudSyncStarted = true;
+            initFirebase();
+            initHandbookPromptSync();
+          }
+        } else {
+          if (gate) gate.style.display = "flex";
+          try {
+            localStorage.removeItem("tokyo_trip_spots");
+          } catch (e) {}
+          if (wasLoggedIn) { location.reload(); return; }
+        }
         const avatar = document.getElementById("authAvatar");
         const label = document.getElementById("authLabel");
         if (user) {
@@ -3223,10 +3255,15 @@
       applyUrlDeepLink();
       renderAll(true);
 
-      // Start Firebase Realtime Database
-      initFirebase();
+      // 🔒 登入後才能查看：先初始化 Firebase App，登入成功才啟動雲端同步
+      try {
+        if (typeof firebase !== "undefined" && !firebase.apps.length) {
+          const config = { ...FIREBASE_CONFIG };
+          if (!config.apiKey) delete config.apiKey;
+          firebase.initializeApp(config);
+        }
+      } catch (e) { console.error(e); }
       initAuth();
-      initHandbookPromptSync();
 
       // 📋 Trip JSON & 🌸 Handbook Prompt Listeners
       document.getElementById("openJsonModalBtn")?.addEventListener("click", openJsonModal);
