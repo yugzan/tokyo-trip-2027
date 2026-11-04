@@ -2,6 +2,7 @@
   "rules": {
     "tokyo_trip": {
       "spots": { ".read": "auth != null", ".write": "auth != null" },
+      "plans": { ".read": "auth != null", ".write": "auth != null" },
       "startDate": { ".read": "auth != null", ".write": "auth != null" },
       "handbookPrompt": { ".read": "auth != null", ".write": "auth != null" },
       "lastUpdate": { ".read": "auth != null", ".write": "auth != null" },

@@ -270,6 +270,12 @@
     </div>
 
     <div class="flex items-center gap-1.5 sm:gap-2 relative z-10 flex-wrap">
+      <!-- 方案切換：A 原行程 / B 新提案 -->
+      <div class="flex items-center rounded-full bg-black/20 backdrop-blur-sm border border-white/40 p-0.5 text-xs font-bold" role="group" aria-label="行程方案">
+        <button type="button" data-plan-btn="A" class="px-2.5 py-1 rounded-full transition" title="方案 A：原行程（迪士尼、河口湖）">A 原行程</button>
+        <button type="button" data-plan-btn="B" class="px-2.5 py-1 rounded-full transition" title="方案 B：新提案（荒川遊樂園、箱根＋富士野生動物園）">B 新提案</button>
+      </div>
+      <button id="adoptPlanBtn" type="button" class="hidden bg-emerald-400 hover:bg-emerald-500 text-slate-900 font-extrabold px-2.5 py-1.5 rounded-full text-xs border-2 border-white shadow-sm transition" title="團員討論定案後，把這個方案設為正式行程（方案 A 會先備份）">✅ 定案</button>
       <!-- Google 登入（登入後才能修改行程） -->
       <button id="authBtn" type="button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold pl-1 pr-3 py-1 rounded-full text-xs flex items-center gap-1.5 border border-white/40 transition" title="用 Google 帳號登入後才能修改行程">
         <span id="authAvatar" class="w-6 h-6 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0"><svg viewBox="0 0 48 48" class="w-3.5 h-3.5"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.2 5.6c4.2-3.9 7.1-9.7 7.1-17.1z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.8-6C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.2-5.6c-2 1.4-4.7 2.3-8.7 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg></span>
@@ -750,6 +756,72 @@
       { id: "s20", day: 7, name: "出發成田機場 (JX803 15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "JX803 成田T2 15:40 → 18:45 桃園T1；搭乘 Skyliner 直達成田T2，13:10前抵達櫃檯" }
     ];
 
+    // 方案 B（新提案）：取消迪士尼、河口湖改箱根＋富士野生動物園
+    const PLAN_B_SPOTS = [
+      { id: "b1", day: 1, name: "成田國際機場", time: "12:35 降落 (JX800)", lat: 35.771986, lng: 140.392850, notes: "JX800 08:25 桃園T1 → 12:35 成田T2；搭乘 Skyliner 直達上野 (約41~51分)" },
+      { id: "b2", day: 1, name: "上野飯店 Check-in", time: "約 14:30", lat: 35.714167, lng: 139.777400, notes: "放行李後輕裝出發" },
+      { id: "b3", day: 1, name: "東京晴空塔 & 墨田水族館", time: "16:00~20:00", lat: 35.710063, lng: 139.810700, notes: "晴空塔逛街＋墨田水族館，地鐵往返上野" },
+
+      { id: "b4", day: 2, name: "あらかわ荒川遊園地", time: "09:30~12:00", lat: 35.753300, lng: 139.754700, notes: "小動物觸摸區、迷你摩天輪；近上野的平價遊樂園" },
+      { id: "b5", day: 2, name: "としまキッズパーク Toshima Kids Park (預約制)", time: "13:00~14:00", lat: 35.726800, lng: 139.723700, notes: "東池袋4-42，紅色迷你火車公園；需事前預約，10:00~16:00 每小時完全入替，限小學低年級以下 https://city-toshima.stores.jp/reserve/toshima-kidspark/booking_pages", transit: "あらかわ遊園地前 搭都電荒川線 -> 東池袋四丁目下車步行約5分" },
+      { id: "b6", day: 2, name: "池袋太陽城 (Sunshine City) 逛街採買", time: "14:30~18:00", lat: 35.729000, lng: 139.719600, notes: "寶可夢中心、水族館、商場採買；地鐵回上野" },
+
+      { id: "b7", day: 3, name: "橫濱麵包超人兒童博物館", time: "10:30~13:30", lat: 35.460800, lng: 139.625600, notes: "上野搭 JR 上野東京線直達橫濱" },
+      { id: "b8", day: 3, name: "港未來21 散步 & 摩天輪", time: "14:00~17:30", lat: 35.455300, lng: 139.637000, notes: "港未來21區散步、Cosmo Clock 摩天輪、紅磚倉庫" },
+      { id: "b9", day: 3, name: "返回上野飯店", time: "18:30", lat: 35.714167, lng: 139.777400, notes: "JR 上野東京線直達上野" },
+
+      { id: "b10", day: 4, name: "PokéPark KANTO (方案一：若中籤)", time: "09:30~17:00", lat: 35.625300, lng: 139.517600, notes: "位於讀賣樂園內，門票抽籤制；沒抽到改方案二" },
+      { id: "b11", day: 4, name: "上野恩賜公園 鴨子船 + 市區室內親子館 (方案二)", time: "10:00~17:00", lat: 35.711800, lng: 139.771000, notes: "不忍池天鵝/鴨子船＋室內親子館備案，步行可達" },
+      { id: "b12", day: 4, name: "續住上野飯店", time: "傍晚返回", lat: 35.714167, lng: 139.777400, notes: "整理行李，大行李隔天寄放飯店" },
+
+      { id: "b13", day: 5, name: "新宿車站 (搭小田急浪漫特快)", time: "08:30", lat: 35.689600, lng: 139.700600, notes: "上野退房、大行李寄放飯店；新宿搭小田急浪漫特快至小田原/箱根湯本" },
+      { id: "b14", day: 5, name: "小田原 / 箱根湯本 取車", time: "10:30", lat: 35.256400, lng: 139.155000, notes: "租車店待定（小田原站或箱根湯本站周邊）；甲租乙還至御殿場站前店，訂車時確認異地還車費" },
+      { id: "b15", day: 5, name: "富士野生動物園 (富士サファリパーク)", time: "12:00~16:00", lat: 35.256300, lng: 138.845300, notes: "静岡県裾野市須山藤原2255-27；自駕遊獵區看獅子熊群、可愛小動物區；大人 3200 円、4 歲~國中 2000 円、3 歲以下免費（來園前再確認）", transit: "小田原自駕->經乙女峠->富士サファリパーク", transportMode: "car" },
+      { id: "b16", day: 5, name: "箱根 / 御殿場 溫泉飯店 (住宿)", time: "傍晚入住", lat: 35.255000, lng: 139.042000, notes: "飯店未定，座標暫放箱根仙石原", transportMode: "car" },
+
+      { id: "b17", day: 6, name: "箱根大湧谷 & 蘆之湖散步 (選項A)", time: "09:30~13:00", lat: 35.244000, lng: 139.019500, notes: "大湧谷黑蛋、蘆之湖湖畔散步；與御殿場 Outlets 二選一", transportMode: "car" },
+      { id: "b18", day: 6, name: "御殿場 Premium Outlets (選項B)", time: "09:30~13:00", lat: 35.302500, lng: 138.969300, notes: "天氣好可看富士山；與大湧谷二選一", transportMode: "car" },
+      { id: "b19", day: 6, name: "Toyota Rent a Car 御殿場駅前店 (還車 & 回東京)", time: "14:00", lat: 35.299198, lng: 138.932661, notes: "静岡県御殿場市新橋1850-6 還車，搭高速巴士或小田急特急回東京", transit: "トヨタレンタカー御殿場駅前店還車->搭高速巴士或小田急特急回東京/上野", transportMode: "car" },
+      { id: "b20", day: 6, name: "上野領大行李 & 採買", time: "16:30~20:00", lat: 35.711500, lng: 139.774700, notes: "回上野飯店領大行李，阿美橫町、多慶屋採購" },
+
+      { id: "b21", day: 7, name: "阿美橫町晨間最後補貨", time: "10:00~11:30", lat: 35.711500, lng: 139.774700, notes: "藥妝與零食最後打包" },
+      { id: "b22", day: 7, name: "出發成田機場 (JX803 15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "JX803 成田T2 15:40 → 18:45 桃園T1；搭乘 Skyliner 直達成田T2，13:10前抵達櫃檯" }
+    ];
+
+    // 方案切換：A 沿用原本的 tokyo_trip/spots，B 另存一份，兩份都能編輯
+    const PLANS = {
+      A: {
+        title: "方案 A｜原行程",
+        path: "tokyo_trip/spots",
+        storageKey: "tokyo_trip_spots",
+        seed: INITIAL_SPOTS,
+        dayLabels: { 1: "抵達 & 晴空塔", 2: "迪士尼海洋", 3: "橫濱親子遊", 4: "樂園二選一", 5: "河口湖自駕", 6: "御殿場還車 & 採買", 7: "上野採買 & 返台" }
+      },
+      B: {
+        title: "方案 B｜新提案",
+        path: "tokyo_trip/plans/B/spots",
+        storageKey: "tokyo_trip_spots_B",
+        seed: PLAN_B_SPOTS,
+        dayLabels: { 1: "抵達 & 晴空塔", 2: "荒川遊樂園 & 池袋公園", 3: "橫濱親子遊", 4: "寶可夢 / 公園備案", 5: "箱根自駕 & 富士野生動物園", 6: "箱根・御殿場 & 還車", 7: "上野採買 & 返台" }
+      }
+    };
+    const PLAN_KEY = "tokyo_trip_plan";
+    let currentPlan = (() => {
+      try {
+        const q = new URLSearchParams(window.location.search).get("plan");
+        if (q && PLANS[q]) return q;
+        const saved = localStorage.getItem(PLAN_KEY);
+        if (saved && PLANS[saved]) return saved;
+      } catch (e) {}
+      return "A";
+    })();
+
+    function applyPlanDayLabels() {
+      const labels = PLANS[currentPlan].dayLabels;
+      Object.keys(labels).forEach(d => { if (DAYS_CONFIG[d]) DAYS_CONFIG[d].label = labels[d]; });
+    }
+    applyPlanDayLabels();
+
     // Auto-upgrade legacy default rental spots (s13 & s17) or mislocated Kawaguchiko Toyota Rent a Car
     function upgradeLegacyRentalSpots(list) {
       let changed = false;
@@ -848,7 +920,7 @@
         } else {
           if (gate) gate.style.display = "flex";
           try {
-            localStorage.removeItem("tokyo_trip_spots");
+            Object.values(PLANS).forEach(pl => localStorage.removeItem(pl.storageKey));
           } catch (e) {}
           if (wasLoggedIn) { location.reload(); return; }
         }
@@ -908,7 +980,6 @@
             firebase.initializeApp(config);
           }
           db = firebase.database();
-          spotsRef = db.ref("tokyo_trip/spots");
           startDateRef = db.ref("tokyo_trip/startDate");
 
           startDateRef.on("value", (snap) => {
@@ -922,34 +993,97 @@
             }
           });
 
-          spotsRef.on("value", (snapshot) => {
-            const data = snapshot.val();
-            updateSyncStatus("online", "雲端即時同步");
-            if (data && Array.isArray(data) && data.length > 0) {
-              lastCloudSpots = JSON.parse(JSON.stringify(data));
-              spots = data;
-              const upgraded = upgradeLegacyRentalSpots(spots);
-              try { localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots)); } catch(e){}
-              if (upgraded) {
-                spotsRef.set(spots);
-              }
-              renderAll(isInitialLoad);
-              if (!isInitialLoad) {
-                showToast("已同步最新行程變更");
-              }
-            } else {
-              spots = [...INITIAL_SPOTS];
-              spotsRef.set(INITIAL_SPOTS);
-              renderAll(true);
-            }
-            isInitialLoad = false;
-          }, () => {
-            updateSyncStatus("offline", "行程自動儲存");
-          });
+          attachSpotsListener();
         }
       } catch (err) {
         updateSyncStatus("offline", "行程自動儲存");
       }
+    }
+
+    // 監聽目前方案的雲端行程；切換方案時先解除舊監聽
+    function attachSpotsListener() {
+      if (!db) return;
+      if (spotsRef) spotsRef.off();
+      const plan = PLANS[currentPlan];
+      const planId = currentPlan;
+      const ref = db.ref(plan.path);
+      spotsRef = ref;
+      ref.on("value", (snapshot) => {
+        if (planId !== currentPlan) return;
+        const data = snapshot.val();
+        updateSyncStatus("online", "雲端即時同步");
+        if (data && Array.isArray(data) && data.length > 0) {
+          lastCloudSpots = JSON.parse(JSON.stringify(data));
+          spots = data;
+          const upgraded = planId === "A" && upgradeLegacyRentalSpots(spots);
+          try { localStorage.setItem(plan.storageKey, JSON.stringify(spots)); } catch(e){}
+          if (upgraded) {
+            ref.set(spots);
+          }
+          renderAll(isInitialLoad);
+          if (!isInitialLoad) {
+            showToast("已同步最新行程變更");
+          }
+        } else {
+          spots = JSON.parse(JSON.stringify(plan.seed));
+          ref.set(plan.seed);
+          renderAll(true);
+        }
+        isInitialLoad = false;
+      }, () => {
+        updateSyncStatus("offline", "行程自動儲存");
+      });
+    }
+
+    function renderPlanSwitch() {
+      document.querySelectorAll("[data-plan-btn]").forEach(btn => {
+        const on = btn.getAttribute("data-plan-btn") === currentPlan;
+        btn.classList.toggle("bg-white", on);
+        btn.classList.toggle("text-slate-900", on);
+        btn.classList.toggle("text-white", !on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      const adoptBtn = document.getElementById("adoptPlanBtn");
+      if (adoptBtn) adoptBtn.classList.toggle("hidden", currentPlan === "A");
+    }
+
+    function switchPlan(planId) {
+      if (!PLANS[planId] || planId === currentPlan) return;
+      currentPlan = planId;
+      try { localStorage.setItem(PLAN_KEY, planId); } catch (e) {}
+      applyPlanDayLabels();
+      activeSpotId = null;
+      lastCloudSpots = null;
+      isInitialLoad = true;
+      loadData();
+      renderAll(true);
+      attachSpotsListener();
+      renderPlanSwitch();
+      syncUrlState();
+      showToast(`🔀 已切換到「${PLANS[planId].title}」`);
+    }
+
+    // 方案 B 定案：先把方案 A 備份到 tokyo_trip/plans/A_backups/<時間>，再把 B 複製成正式行程
+    function adoptCurrentPlan() {
+      if (currentPlan === "A") return;
+      if (!requireLogin() || !db) return;
+      if (!confirm(`確定採用「${PLANS[currentPlan].title}」為正式行程嗎？\n\n方案 A 會被取代（舊內容會先備份到 tokyo_trip/plans/A_backups）。`)) return;
+      const adopted = JSON.parse(JSON.stringify(spots));
+      const fromTitle = PLANS[currentPlan].title;
+      db.ref(PLANS.A.path).once("value").then(snap => {
+        return db.ref(`tokyo_trip/plans/A_backups/${Date.now()}`).set({
+          spots: snap.val() || [],
+          at: firebase.database.ServerValue.TIMESTAMP,
+          by: currentUser.displayName || currentUser.email
+        });
+      }).then(() => db.ref(PLANS.A.path).set(adopted)).then(() => {
+        recordLastUpdate(`採用${fromTitle}為正式行程`);
+        switchPlan("A");
+        showToast(`✅ 已採用「${fromTitle}」為正式行程（舊方案 A 已備份）`);
+      }).catch(err => {
+        console.error(err);
+        showToast("定案失敗：" + (err.code || err.message));
+      });
     }
 
     function updateSyncStatus(status, text) {
@@ -977,15 +1111,15 @@
         }
         refreshDaysConfigFromDate(tripStartDate);
 
-        const saved = localStorage.getItem("tokyo_trip_spots");
+        const saved = localStorage.getItem(PLANS[currentPlan].storageKey);
         if (saved) {
           spots = JSON.parse(saved);
-          upgradeLegacyRentalSpots(spots);
+          if (currentPlan === "A") upgradeLegacyRentalSpots(spots);
         } else {
-          spots = [...INITIAL_SPOTS];
+          spots = JSON.parse(JSON.stringify(PLANS[currentPlan].seed));
         }
       } catch (e) {
-        spots = [...INITIAL_SPOTS];
+        spots = JSON.parse(JSON.stringify(PLANS[currentPlan].seed));
       }
     }
 
@@ -1015,7 +1149,7 @@
 
       // 1. 本地儲存備份
       try {
-        localStorage.setItem("tokyo_trip_spots", JSON.stringify(spots));
+        localStorage.setItem(PLANS[currentPlan].storageKey, JSON.stringify(spots));
       } catch (e) {}
 
       // 2. 雲端即時同步
@@ -1023,7 +1157,7 @@
         updateSyncStatus("saving", "同步上傳中...");
         spotsRef.set(spots).then(() => {
           updateSyncStatus("online", "雲端即時同步中");
-          recordLastUpdate(actionMsg);
+          recordLastUpdate(actionMsg ? `[${PLANS[currentPlan].title}] ${actionMsg}` : actionMsg);
           if (actionMsg) showToast(actionMsg);
         }).catch((err) => {
           console.error("Firebase save failed:", err);
@@ -2711,6 +2845,11 @@
         } else {
           params.delete("view");
         }
+        if (currentPlan !== "A") {
+          params.set("plan", currentPlan);
+        } else {
+          params.delete("plan");
+        }
         const qs = params.toString();
         const newUrl = window.location.pathname + (qs ? `?${qs}` : "");
         window.history.replaceState(null, "", newUrl);
@@ -2741,7 +2880,7 @@
       const activeSpot = spots.find(s => s.id === activeSpotId);
       const dayTitle = currentFilter === "all" ? "東京 7 天 6 夜全行程" : (DAYS_CONFIG[currentFilter]?.fullName || `D${currentFilter}`);
       const spotTitle = activeSpot ? ` 📍 ${activeSpot.name}` : "";
-      const shareText = `🗼 東京7天6夜 親子夢幻樂園之旅 (${dayTitle}${spotTitle})：${shareUrl}`;
+      const shareText = `🗼 東京7天6夜 親子夢幻樂園之旅【${PLANS[currentPlan].title}】(${dayTitle}${spotTitle})：${shareUrl}`;
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(shareUrl).then(() => {
@@ -3265,6 +3404,12 @@
       } catch (e) { console.error(e); }
       initAuth();
 
+      document.querySelectorAll("[data-plan-btn]").forEach(btn => {
+        btn.addEventListener("click", () => switchPlan(btn.getAttribute("data-plan-btn")));
+      });
+      document.getElementById("adoptPlanBtn")?.addEventListener("click", adoptCurrentPlan);
+      renderPlanSwitch();
+
       // 📋 Trip JSON & 🌸 Handbook Prompt Listeners
       document.getElementById("openJsonModalBtn")?.addEventListener("click", openJsonModal);
       document.querySelectorAll(".close-json-modal").forEach(b => b.addEventListener("click", closeJsonModal));
@@ -3378,9 +3523,9 @@
       });
 
       document.getElementById("resetBtn").addEventListener("click", () => {
-        if (confirm("⚠️ 確定要將行程重置為初始預設嗎？所有共同編輯的內容都會被重置！")) {
-          spots = [...INITIAL_SPOTS];
-          saveData("已恢復預設 7 天行程");
+        if (confirm(`⚠️ 確定要將「${PLANS[currentPlan].title}」重置為初始預設嗎？這個方案所有共同編輯的內容都會被重置！`)) {
+          spots = JSON.parse(JSON.stringify(PLANS[currentPlan].seed));
+          saveData(`已恢復「${PLANS[currentPlan].title}」預設行程`);
           renderAll(true);
         }
       });
