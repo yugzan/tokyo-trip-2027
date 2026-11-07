@@ -727,33 +727,37 @@
     }
 
     // Pre-loaded initial Tokyo itinerary data
+    const PLAN_A_SEED_REV = "A-2026-11-07";
     const INITIAL_SPOTS = [
-      { id: "s1", day: 1, name: "成田國際機場", time: "12:35 降落 (JX800)", lat: 35.771986, lng: 140.392850, notes: "JX800 08:25 桃園T1 → 12:35 成田T2；搭乘 Skyliner 直達上野 (約41~51分)" },
-      { id: "s2", day: 1, name: "上野飯店 Check-in", time: "約 14:30", lat: 35.714167, lng: 139.777400, notes: "推薦住上野，放行李後輕裝出發" },
-      { id: "s3", day: 1, name: "東京晴空塔 & 墨田水族館", time: "16:00~20:00", lat: 35.710063, lng: 139.810700, notes: "晴空塔逛街＋墨田水族館，打烊約 21:00" },
-      
-      { id: "s4", day: 2, name: "東京迪士尼海洋 (Tokyo DisneySea)", time: "08:30~21:00", lat: 35.626700, lng: 139.885100, notes: "整天暢玩，大行李寄放上野，帶背包出發" },
-      { id: "s5", day: 2, name: "迪士尼大使大飯店 (住宿)", time: "閉園後入住", lat: 35.631800, lng: 139.886000, notes: "已確認當晚入住，免去晚上擠電車奔波" },
+      { id: "s1", day: 1, seedRev: "A-2026-11-07", name: "成田國際機場", time: "12:35 降落 (JX800)", lat: 35.771986, lng: 140.392850, notes: "JX800 08:25 桃園T1 → 12:35 成田T2；搭乘 Skyliner 直達上野 (約51分)" },
+      { id: "s2", day: 1, name: "上野飯店 Check-in", time: "約 14:00", lat: 35.714167, lng: 139.777400, notes: "約 2 點到市區，先 CHECK IN（住上野）" },
+      { id: "s3", day: 1, name: "東京晴空塔 & 墨田水族館 & 逛街", time: "15:00~21:00", lat: 35.710063, lng: 139.810700, notes: "下半天晴空塔＋墨田水族館＋逛街（打烊時間約 21:00）" },
 
-      { id: "s6", day: 3, name: "橫濱麵包超人兒童博物館", time: "10:30~13:30", lat: 35.460800, lng: 139.625600, notes: "舞濱直達橫濱巴士 (約50分) 或新木場轉乘" },
-      { id: "s7", day: 3, name: "橫濱水陸兩用船 & 摩天輪", time: "14:00~17:30", lat: 35.455300, lng: 139.637000, notes: "港未來21區搭船、摩天輪與紅磚倉庫逛街" },
-      { id: "s8", day: 3, name: "返回上野飯店 Check-in", time: "18:30", lat: 35.714167, lng: 139.777400, notes: "搭 JR 上野東京線直達上野，領回大行李" },
+      { id: "s4", day: 2, name: "東京迪士尼陸地 (Tokyo Disneyland)", time: "整天", lat: 35.632896, lng: 139.880394, notes: "迪士尼陸地整天；大行李寄放上野，帶背包出發", transit: "上野站 -> 日比谷線 -> 八丁堀 -> 京葉線 -> 舞濱站（約 40 分鐘）" },
+      { id: "s5", day: 2, name: "迪士尼飯店 (住宿)", time: "閉園後入住", lat: 35.631800, lng: 139.886000, notes: "住迪士尼" },
 
-      { id: "s9", day: 4, name: "三麗鷗彩虹樂園 (選項A)", time: "09:30~17:00", lat: 35.624700, lng: 139.429300, notes: "全室內親子樂園，上野搭車至新宿轉京王線約1小時" },
-      { id: "s10", day: 4, name: "あらかわ荒川遊園地 (選項B)", time: "09:00~17:00", lat: 35.753300, lng: 139.754700, notes: "近上野平價遊樂園，建議二選一以免兩邊趕路" },
-      { id: "s11", day: 4, name: "續住上野飯店 (不換房)", time: "傍晚返回", lat: 35.714167, lng: 139.777400, notes: "免搬家，養精蓄銳準備隔天河口湖" },
+      { id: "s6", day: 3, name: "橫濱麵包超人兒童博物館", time: "10:00~13:00", lat: 35.460800, lng: 139.625600, notes: "麵包超人博物館", transit: "上野站 -> 京濱東北線 -> 橫濱（約 1 小時）" },
+      { id: "s7", day: 3, name: "橫濱水陸兩用船 & 摩天輪 & 逛街", time: "14:00~18:00", lat: 35.455300, lng: 139.637000, notes: "港未來21：水陸兩用船、摩天輪、逛街" },
+      { id: "s8", day: 3, name: "返回上野飯店", time: "傍晚", lat: 35.714167, lng: 139.777400, notes: "住上野（住同一間，去迪士尼帶背包就好）" },
 
-      { id: "s12", day: 5, name: "新宿車站 (搭乘富士回遊)", time: "08:30", lat: 35.689600, lng: 139.700600, notes: "上野搭山手線到新宿，搭直達特急免換車" },
-      { id: "s13", day: 5, name: "Toyota Rent a Car 富士河口湖店 (取車)", time: "10:30", lat: 35.497707, lng: 138.772818, notes: "山梨県南都留郡富士河口湖町船津4657（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/", transit: "河口湖站出站->沿國道137號步行約7分鐘（ENEOS加油站旁）至トヨタレンタカー富士河口湖店取車" },
-      { id: "s14", day: 5, name: "河口湖天上山纜車 & 遊覽船", time: "11:30~14:00", lat: 35.503600, lng: 138.772500, notes: "眺望富士山美景，人潮多需預留排隊時間" },
-      { id: "s15", day: 5, name: "富士 SUBARU 樂園", time: "14:30~17:00", lat: 35.441800, lng: 138.752300, notes: "森林探索戶外園區，大人小孩狗狗都適合" },
-      { id: "s16", day: 5, name: "河口湖溫泉旅館 (住宿)", time: "傍晚入住", lat: 35.508500, lng: 138.765000, notes: "一泊二食享受富士山景色" },
+      { id: "s9", day: 4, name: "寶可夢樂園 PokéPark KANTO (選項A)", time: "09:30~17:00", lat: 35.625300, lng: 139.517600, notes: "位於讀賣樂園內，與荒川遊樂園二選一", transit: "上野站 -> 日比谷線 -> 秋葉原 -> 走到岩本町站 -> 京王多摩中心 -> 京王讀賣樂園（約 1 小時 20 分）" },
+      { id: "s10", day: 4, name: "あらかわ荒川遊園地 (選項B)", time: "09:00~17:00", lat: 35.753300, lng: 139.754700, notes: "近上野平價遊樂園，與寶可夢樂園二選一" },
+      { id: "s11", day: 4, name: "不忍池划船 + 阿美橫丁 + 唐吉訶德 + 玩具店 + 夾娃娃機店", time: "下午", lat: 35.711800, lng: 139.771000, notes: "（選荒川遊樂園時）下午不忍池划船、阿美橫丁、唐吉訶德、玩具店、夾娃娃機店等等；住上野" },
 
-      { id: "s17", day: 6, name: "Toyota Rent a Car 御殿場駅前店 (還車 & 回東京)", time: "11:30~14:00", lat: 35.299198, lng: 138.932661, notes: "從河口湖自駕至御殿場站前店甲租乙還（静岡県御殿場市新橋1850-6，可順遊御殿場 Outlet），再搭車返回東京", transit: "河口湖自駕->東富士五湖道路->トヨタレンタカー御殿場駅前店還車->搭高速巴士或JR回東京/上野" },
-      { id: "s18", day: 6, name: "上野市區最後採買", time: "15:30~20:00", lat: 35.711500, lng: 139.774700, notes: "入住上野，集中在阿美橫町、多慶屋採購" },
+      { id: "s12", day: 5, name: "河口湖遊覽船", time: "09:00 起（每半小時一班）", lat: 35.510900, lng: 138.766500, notes: "河口湖坐船，9:00 開始每半小時一台" },
+      { id: "s13", day: 5, name: "Toyota Rent a Car 富士河口湖店 (租車)", time: "約 10:00", lat: 35.497707, lng: 138.772818, notes: "山梨県南都留郡富士河口湖町船津4657（甲租乙還至御殿場） https://rent.toyota.co.jp/zh-tw/", transit: "河口湖站出站->沿國道137號步行約7分鐘（ENEOS加油站旁）至トヨタレンタカー富士河口湖店取車" },
+      { id: "s14", day: 5, name: "吃飯 + 遊湖 + 天上山纜車", time: "11:00~14:30", lat: 35.503600, lng: 138.772500, notes: "午餐、遊湖、坐纜車", transportMode: "car" },
+      { id: "s15", day: 5, name: "御殿場 Premium Outlets", time: "15:30~17:30 (1~2 小時)", lat: 35.302500, lng: 138.969300, notes: "先逛 1~2 小時，沒買完隔天繼續", transportMode: "car" },
+      { id: "s21", day: 5, name: "MaxValu 御殿場東田中店 (超市)", time: "傍晚（24 小時營業）", lat: 35.290300, lng: 138.944000, notes: "マックスバリュ御殿場東田中店｜静岡県御殿場市東田中2-11-1，24 小時營業；買晚餐/早餐/零食（座標為概略位置，導航請用地址）", transportMode: "car" },
+      { id: "s16", day: 5, name: "御殿場飯店 (住宿)", time: "晚上入住", lat: 35.299000, lng: 138.935000, notes: "住御殿場（飯店未定，座標暫放御殿場站周邊）", transportMode: "car" },
 
-      { id: "s19", day: 7, name: "阿美橫町晨間最後補貨", time: "10:00~11:30", lat: 35.711500, lng: 139.774700, notes: "藥妝與零食最後打包" },
-      { id: "s20", day: 7, name: "出發成田機場 (JX803 15:40班機)", time: "12:15 出發", lat: 35.771986, lng: 140.392850, notes: "JX803 成田T2 15:40 → 18:45 桃園T1；搭乘 Skyliner 直達成田T2，13:10前抵達櫃檯" }
+      { id: "s22", day: 6, name: "富士野生動物園 (富士サファリパーク)", time: "09:00~12:30", lat: 35.256300, lng: 138.845300, notes: "静岡県裾野市須山藤原2255-27；自駕遊獵區", transportMode: "car" },
+      { id: "s23", day: 6, name: "御殿場 Premium Outlets (前天沒買到繼續買)", time: "13:30~15:30", lat: 35.302500, lng: 138.969300, notes: "前天沒買到繼續買", transportMode: "car" },
+      { id: "s17", day: 6, name: "Toyota Rent a Car 御殿場駅前店 (還車 & 回上野)", time: "16:00", lat: 35.299198, lng: 138.932661, notes: "静岡県御殿場市新橋1850-6 還車，搭高速巴士或JR/小田急回上野", transit: "トヨタレンタカー御殿場駅前店還車->搭高速巴士或JR回東京/上野", transportMode: "car" },
+      { id: "s18", day: 6, name: "上野飯店 (住宿)", time: "晚上", lat: 35.714167, lng: 139.777400, notes: "住上野" },
+
+      { id: "s19", day: 7, name: "整理行李 + 買買東西", time: "09:00~12:00", lat: 35.711500, lng: 139.774700, notes: "整理行李、阿美橫町最後補貨，12:00 就去機場" },
+      { id: "s20", day: 7, name: "出發成田機場 (JX803 15:40班機)", time: "12:00 出發", lat: 35.771986, lng: 140.392850, notes: "JX803 成田T2 15:40 → 18:45 桃園T1；搭乘 Skyliner 直達成田T2" }
     ];
 
     // 方案 B（新提案）：取消迪士尼、河口湖改箱根＋富士野生動物園
@@ -795,7 +799,7 @@
         path: "tokyo_trip/spots",
         storageKey: "tokyo_trip_spots",
         seed: INITIAL_SPOTS,
-        dayLabels: { 1: "抵達 & 晴空塔", 2: "迪士尼海洋", 3: "橫濱親子遊", 4: "樂園二選一", 5: "河口湖自駕", 6: "御殿場還車 & 採買", 7: "上野採買 & 返台" }
+        dayLabels: { 1: "抵達 & 晴空塔", 2: "迪士尼陸地", 3: "橫濱親子遊", 4: "寶可夢 / 荒川遊樂園", 5: "河口湖 & 御殿場", 6: "富士野生動物園 & Outlet", 7: "整理採買 & 返台" }
       },
       B: {
         title: "方案 B｜新提案",
@@ -825,6 +829,11 @@
     // Auto-upgrade legacy default rental spots (s13 & s17) or mislocated Kawaguchiko Toyota Rent a Car
     function upgradeLegacyRentalSpots(list) {
       let changed = false;
+      // 一次性套用新版方案 A 表格（2026-11-07）
+      if (!list.some(item => item && item.seedRev === PLAN_A_SEED_REV)) {
+        list.splice(0, list.length, ...JSON.parse(JSON.stringify(INITIAL_SPOTS)));
+        return true;
+      }
       list.forEach(item => {
         const isKawaguchikoToyota = item.id === "s13" || /トヨタレンタカー.*河口湖|Toyota.*河口湖/i.test(item.name || "");
         if (isKawaguchikoToyota && (Math.abs(item.lng - 138.772818) > 0.001 || item.name === "河口湖站租車取車")) {
