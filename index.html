@@ -727,11 +727,12 @@
     }
 
     // Pre-loaded initial Tokyo itinerary data
-    const PLAN_A_SEED_REV = "A-2026-11-16";
+    const PLAN_A_SEED_REV = "A-2026-11-17";
     const INITIAL_SPOTS = [
-      { id: "s1", day: 1, seedRev: "A-2026-11-16", name: "成田國際機場", time: "12:35 降落 (JX800)", lat: 35.771986, lng: 140.392850, notes: "JX800 08:25 桃園T1 → 12:35 成田T2；搭乘 Skyliner 直達上野 (約51分)" },
+      { id: "s1", day: 1, seedRev: "A-2026-11-17", name: "成田國際機場", time: "12:35 降落 (JX800)", lat: 35.771986, lng: 140.392850, notes: "JX800 08:25 桃園T1 → 12:35 成田T2；搭乘 Skyliner 直達上野 (約51分)" },
       { id: "s2", day: 1, name: "上野御徒町東誠可可尼飯店 (寄放行李)", time: "約 14:00", lat: 35.706459, lng: 139.773120, notes: "第 1 晚住宿。約 2 點到，Check-in 15:00 起，先在櫃台寄放行李再出發，晚上回來辦入住；トーセイホテル ココネ上野御徒町｜東京都台東区上野3-23-9｜JR 御徒町站南口步行約 2 分、銀座線上野廣小路站 A1 步行約 2 分｜Check-in 15:00／Check-out 10:00", transit: "京成上野站 → 步行約 10 分鐘（或 JR 上野站搭山手線/京濱東北線一站到御徒町站）" },
       { id: "s3", day: 1, name: "東京晴空塔 & 墨田水族館 & 逛街", time: "15:00~21:00", lat: 35.710063, lng: 139.810700, notes: "下半天晴空塔＋墨田水族館＋逛街（打烊時間約 21:00）" },
+      { id: "s28", day: 1, name: "返回上野御徒町東誠可可尼飯店 (Check-in)", time: "約 21:30", lat: 35.706459, lng: 139.773120, notes: "第 1 晚住宿；回飯店辦入住、領回下午寄放的行李；東京都台東区上野3-23-9", transit: "押上站 -> 都營淺草線 -> 淺草 -> 銀座線 -> 上野廣小路站 A1 步行約 2 分" },
 
       { id: "s4", day: 2, name: "東京迪士尼陸地 (Tokyo Disneyland)", time: "整天", lat: 35.632896, lng: 139.880394, notes: "迪士尼陸地整天；早上上野御徒町東誠可可尼飯店退房（10:00 前），大行李寄放飯店櫃台（第 3 晚續住同一間，請事先跟飯店確認可寄放），帶背包出發", transit: "仲御徒町站 -> 日比谷線 -> 八丁堀 -> 京葉線 -> 舞濱站（約 40 分鐘）" },
       { id: "s5", day: 2, name: "迪士尼大使大飯店 (住宿)", time: "閉園後入住", lat: 35.633808, lng: 139.887847, notes: "第 2 晚住宿（已確認）｜ディズニーアンバサダーホテル｜千葉県浦安市舞浜2-11｜JR 舞濱站步行約 8 分｜Check-in 15:00／Check-out 12:00；早上到園前可先到飯店櫃台寄放背包（請向飯店確認）" },
@@ -1960,9 +1961,9 @@
           });
         });
 
-        // Build segments for this day (including cross-day hotel connection on single-day filter!)
+        // Build segments for this day (including cross-day hotel connection, in both single-day and all-days views)
         const segmentsToDraw = [];
-        if (currentFilter !== "all" && daySpots.length > 0) {
+        if (daySpots.length > 0) {
           const firstNav = getSpotNavigation(daySpots[0]);
           if (firstNav.hasRoute && firstNav.prevSpot) {
             segmentsToDraw.push({ fromSpot: firstNav.prevSpot, toSpot: daySpots[0], seqIdx: 0 });
